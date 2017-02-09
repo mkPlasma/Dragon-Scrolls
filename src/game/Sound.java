@@ -9,10 +9,8 @@ import javax.sound.sampled.Clip;
 
 public class Sound{
 	
-	boolean soundEnabled = true;
-	
-	public void playSound(String path){
-		if(!soundEnabled){
+	public static void playSound(String path){
+		if(!Settings.soundEnabled()){
 			return;
 		}
 		
@@ -24,9 +22,5 @@ public class Sound{
 			clip.start();
 		}
 		catch(Exception e){}
-	}
-	
-	public void setSoundEnabled(boolean b){
-		soundEnabled = b;
 	}
 }

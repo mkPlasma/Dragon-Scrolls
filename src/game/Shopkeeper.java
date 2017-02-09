@@ -3,13 +3,11 @@ package game;
 
 public class Shopkeeper{
 	
-	private final Item emptyItem = new Item();
+	private final Item[] items;
+	private final int[] itemPrices;
+	private final int[] itemCounts;
 	
-	private Item[] items;
-	private int[] itemPrices;
-	private int[] itemCounts;
-	
-	private String name, greetMessage, endMessage;
+	private final String name, greetMessage, endMessage;
 	
 	public Shopkeeper(String name, String greetMessage, String endMessage, Item[] items, int[] itemPrices, int[] itemCounts){
 		this.name = name;
@@ -49,10 +47,6 @@ public class Shopkeeper{
 		for(int i = 0; i < items.length - 0; i++){
 			if(items[i].equals(item) && itemCounts[i] > 0){
 				itemCounts[i] -= 1;
-				
-				if(itemCounts[i] == 0){
-					items[i] = emptyItem;
-				}
 			}
 		}
 	}

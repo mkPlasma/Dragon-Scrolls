@@ -5,10 +5,10 @@ import java.awt.event.KeyListener;
 
 public class KeyboardListener implements KeyListener{
 
-	private boolean sendText = false;
+	private static boolean sendText = false;
 	
-	private boolean upHeld = false;
-	private boolean downHeld = false;
+	private static boolean upHeld = false;
+	private static boolean downHeld = false;
 	
 	public void keyPressed(KeyEvent event){
 		
@@ -34,24 +34,24 @@ public class KeyboardListener implements KeyListener{
 		
 	}
 	
-	public boolean sendText(){
+	public static boolean sendText(){
 		return sendText;
 	}
 	
-	public void resetEnter(){
+	public static void resetEnter(){
 		sendText = false;
 	}
 	
-	public void resetArrowKeys(){
+	public static void resetArrowKeys(){
 		upHeld = false;
 		downHeld = false;
 	}
 	
-	public boolean isUpHeld(){
+	public static boolean isUpHeld(){
 		return upHeld;
 	}
 	
-	public boolean isDownHeld(){
+	public static boolean isDownHeld(){
 		return downHeld;
 	}
 }

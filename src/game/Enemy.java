@@ -2,12 +2,8 @@ package game;
 
 import java.awt.Color;
 import java.util.Arrays;
-import java.util.Random;
 
 public class Enemy{
-	
-	private final Random random = new Random();
-	
 
 	private final String enemyName;
 	
@@ -157,7 +153,7 @@ public class Enemy{
 	}
 	
 	public boolean getRandomEncounter(){
-		if(random.nextInt(99) + 1 <= encounterRate)
+		if(RandomGen.randomChance(encounterRate))
 			return true;
 		
 		return false;
@@ -165,14 +161,14 @@ public class Enemy{
 	
 	public Item getRandomDrop(){
 		
-		if(random.nextInt(99) + 1 <= dropChance){
+		if(RandomGen.randomChance(dropChance)){
 			Item[] items = new Item[drops.length];
 			Arrays.fill(items, emptyItem);
 			
 			if(items.length > 0){
 				
 				for(int i = 0; i < drops.length; i++){
-					if(random.nextInt(99) + 1 <= dropRates[i]){
+					if(RandomGen.randomChance(dropRates[i])){
 						items[i] = drops[i];
 					}
 				}
@@ -198,16 +194,19 @@ public class Enemy{
 	}
 	
 	public int getRandomGold(){
-		int temp = random.nextInt((maxGold - minGold) + 1) + minGold;
-		return temp;
+		return RandomGen.getInt(minGold, maxGold);
 	}
 
 	public int getRandomXP(){
-		int temp = random.nextInt((maxXP - minXP) + 1) + minXP;
-		return temp;
+		return RandomGen.getInt(minXP, maxXP);
 	}
 	
 	public void updateEnemy(){
+		
+		if(health > maxHealth){
+			health = maxHealth;
+		}
+		
 		updateStatusEffects(false);
 	}
 	
@@ -231,7 +230,7 @@ public class Enemy{
 		}
 	}
 	
-	public StatusEffect[] updateStatusEffects(boolean updateLength){
+	public StatusEffect[] updateStatusEffects(boolean fullUpdate){
 		
 		StatusEffect[] endedEffects = new StatusEffect[20];
 		Arrays.fill(endedEffects, emptyEffect);
@@ -240,46 +239,51 @@ public class Enemy{
 		
 		for(int i = 0; i < statusEffects.length; i++){
 
-			if(updateLength){
+			if(fullUpdate){
 				statusEffects[i].updateLength();
 			}
 			
 			if(statusEffects[i].getType() != emptyEffect.getType() && statusEffects[i].getLength() <= 0){
 				endedEffects[i] = statusEffects[i];
+				statusEffects[i] = emptyEffect;
 			}
 			
 			switch(statusEffects[i].getType()){
-			case 1:
-				health += statusEffects[i].getLevel();
-				break;
-			
-			case 3:
-				defense = baseDefense + statusEffects[i].getLevel();
-				break;
-			
-			case 4:
-				damageMultiplier += (0.05*statusEffects[i].getLevel());
-				break;
-
-			case 8: case 9:
-				health -= statusEffects[i].getLevel();
-				break;
-			
-			case 11:
-				damageMultiplier -= (0.05*statusEffects[i].getLevel());
-				break;
-			
-			case 13:
-				defense = baseDefense - statusEffects[i].getLevel();
-				break;
-			
-			case 14:
-				maxHealth = baseMaxHealth + statusEffects[i].getLevel();
-				break;
-			
-			case 16:
-				maxHealth = baseMaxHealth - statusEffects[i].getLevel();
-				break;
+				case 1:
+					if(fullUpdate){
+						health += statusEffects[i].getLevel();
+					}
+					break;
+				
+				case 3:
+					defense = baseDefense + statusEffects[i].getLevel();
+					break;
+				
+				case 4:
+					damageMultiplier += (0.05*statusEffects[i].getLevel());
+					break;
+	
+				case 8: case 9:
+					if(fullUpdate){
+						health -= statusEffects[i].getLevel();
+					}
+					break;
+				
+				case 11:
+					damageMultiplier -= (0.05*statusEffects[i].getLevel());
+					break;
+				
+				case 13:
+					defense = baseDefense - statusEffects[i].getLevel();
+					break;
+				
+				case 14:
+					maxHealth = baseMaxHealth + statusEffects[i].getLevel();
+					break;
+				
+				case 16:
+					maxHealth = baseMaxHealth - statusEffects[i].getLevel();
+					break;
 			}
 		}
 		
@@ -350,13 +354,16 @@ public class Enemy{
 		
 		int level = getStatusEffectLevel(18);
 		
-		if(level > 0 && random.nextInt(99) + 1 <= level*5){
+		if(level > 0 && RandomGen.randomChance(level*5)){
 			return true;
 		}
 		
 		return false;
 	}
-
+	
+	public double getDamageMultiplier(){
+		return damageMultiplier;
+	}
 	
 	public boolean attacksFirst(){
 		return attacksFirst;

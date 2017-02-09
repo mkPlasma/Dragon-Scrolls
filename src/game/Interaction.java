@@ -5,8 +5,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Interaction{
 	
-	private Text text = new Text();
-	
 	private final int type;
 	//0 - Give items
 	//1 - Give health/magic
@@ -91,68 +89,64 @@ public class Interaction{
 		return names;
 	}
 	
-	public void setWindow(Window window){
-		text.setWindow(window);
-	}
-	
-	public Player interact(Player player){
+	public void interact(){
 		
 		boolean used = false;
 		
 		if(uses > 0 || uses == -1){
-			text.printTextAddLine(eventText);
+			Text.printLineExtra(eventText);
 			waitSeconds(waitTime, false);
 			
 			switch(type){
 				case 0:
 					
-					text.printTextAddLine("You found ");
-					text.print(item.getDisplayName(), item.getColor());
-					text.print(".");
-					text.printText("Do you want to pick it up?");
+					Text.printLineExtra("You found ");
+					Text.print(item.getDisplayName(), item.getColor());
+					Text.print(".");
+					Text.printLine("Do you want to pick it up?");
 					
 					break;
 					
 				case 1:
 					
-					String healthRestored = Integer.toString(player.getHealth() - player.getHealth());					
-					String magicRestored = Integer.toString(player.getMagic() - player.getMagic());
+					String healthRestored = Integer.toString(Math.min(health, Player.getMaxHealth() - Player.getHealth()));					
+					String magicRestored = Integer.toString(Math.min(magic, Player.getMaxMagic() - Player.getMagic()));
 					
-					player.setHealth(player.getHealth() + health);
-					player.setMagic(player.getMagic() + magic);
+					Player.setHealth(Player.getHealth() + health);
+					Player.setMagic(Player.getMagic() + magic);
 					
 					if(health > 0){
 						if(magic > 0){
-							text.printText("It healed ");
-							text.print(healthRestored + " health ", Color.RED);
-							text.print("and ");
-							text.print(magicRestored + " magic", Color.BLUE);
-							text.print(".");
-							text.print("You now have ");
-							text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health ", Color.RED);
-							text.print("and ");
-							text.print(Integer.toString(player.getMagic()) + "/" + Integer.toString(player.getMaxMagic()) + " magic", Color.BLUE);
-							text.print(".");
+							Text.printLine("It healed ");
+							Text.print(healthRestored + " health ", Color.RED);
+							Text.print("and ");
+							Text.print(magicRestored + " magic", Color.BLUE);
+							Text.print(".");
+							Text.print("You now have ");
+							Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health ", Color.RED);
+							Text.print("and ");
+							Text.print(Integer.toString(Player.getMagic()) + "/" + Integer.toString(Player.getMaxMagic()) + " magic", Color.BLUE);
+							Text.print(".");
 						}
 						else{
-							text.printText("It healed ");
-							text.print(healthRestored + " health", Color.RED);
-							text.print(".");
-							text.print("You now have ");
-							text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health", Color.RED);
-							text.print(".");
+							Text.printLine("It healed ");
+							Text.print(healthRestored + " health", Color.RED);
+							Text.print(".");
+							Text.print("You now have ");
+							Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+							Text.print(".");
 						}
 					}
 					else if(magic > 0){
-						text.printText("It healed ");
-						text.print(magicRestored + " magic", Color.BLUE);
-						text.print(".");
-						text.print("You now have ");
-						text.print(Integer.toString(player.getMagic()) + "/" + Integer.toString(player.getMaxMagic()) + " magic", Color.BLUE);
-						text.print(".");
+						Text.printLine("It healed ");
+						Text.print(magicRestored + " magic", Color.BLUE);
+						Text.print(".");
+						Text.print("You now have ");
+						Text.print(Integer.toString(Player.getMagic()) + "/" + Integer.toString(Player.getMaxMagic()) + " magic", Color.BLUE);
+						Text.print(".");
 					}
 					
-					if(health > 0 && player.getHealth() == player.getMaxHealth() || magic > 0 && player.getMagic() == player.getMaxMagic()){
+					if(health > 0 && Player.getHealth() == Player.getMaxHealth() || magic > 0 && Player.getMagic() == Player.getMaxMagic()){
 						used = true;
 					}
 					
@@ -160,22 +154,22 @@ public class Interaction{
 				
 				case 2:
 					
-					player.setBaseMaxHealth(player.getBaseMaxHealth() + health);
-					player.setBaseMaxMagic(player.getBaseMaxMagic() + magic);
+					Player.setBaseMaxHealth(Player.getBaseMaxHealth() + health);
+					Player.setBaseMaxMagic(Player.getBaseMaxMagic() + magic);
 					
 					if(health > 0){
 						if(magic > 0){
-							text.printText(new String[]{"Your maximum health increased by " + Integer.toString(health) + " and your maximum magic increased by " + Integer.toString(magic) + "," +
-							" leaving you with " + Integer.toString(player.getMaxHealth()) + " maximum health and " + Integer.toString(player.getMaxMagic()) + " maximum magic!"});
+							Text.printLine(new String[]{"Your maximum health increased by " + Integer.toString(health) + " and your maximum magic increased by " + Integer.toString(magic) + "," +
+							" leaving you with " + Integer.toString(Player.getMaxHealth()) + " maximum health and " + Integer.toString(Player.getMaxMagic()) + " maximum magic!"});
 						}
 						else{
-							text.printText(new String[]{"Your maximum health increased by " + Integer.toString(health) + "," +
-							" leaving you with " + Integer.toString(player.getMaxHealth()) + " maximum health!"});
+							Text.printLine(new String[]{"Your maximum health increased by " + Integer.toString(health) + "," +
+							" leaving you with " + Integer.toString(Player.getMaxHealth()) + " maximum health!"});
 						}
 					}
 					else if(magic > 0){
-						text.printText(new String[]{"Your maximum magic increased by " + Integer.toString(magic) + "," +
-						" leaving you with " + Integer.toString(player.getMaxMagic()) + " maximum magic!"});
+						Text.printLine(new String[]{"Your maximum magic increased by " + Integer.toString(magic) + "," +
+						" leaving you with " + Integer.toString(Player.getMaxMagic()) + " maximum magic!"});
 					}
 					
 					used = true;
@@ -183,8 +177,8 @@ public class Interaction{
 					break;
 				
 				case 3:
-					player.setGold(player.getGold() + gold);
-					text.printText("You obtained " + Integer.toString(gold) + " gold!");
+					Player.setGold(Player.getGold() + gold);
+					Text.printLine("You obtained " + Integer.toString(gold) + " gold!");
 					used = true;
 					
 					break;
@@ -195,10 +189,8 @@ public class Interaction{
 			}
 		}
 		else{
-			text.printTextAddLine(endText);
+			Text.printLineExtra(endText);
 		}
-		
-		return player;
 	}
 	
 	private void waitSeconds(int seconds, boolean ignoreWaitEnabled){

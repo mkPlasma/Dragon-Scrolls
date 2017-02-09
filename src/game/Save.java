@@ -12,17 +12,12 @@ import java.util.Arrays;
 
 public class Save{
 	
-	ObjectList list = new ObjectList();
-	Text text = new Text();
-	
 	int saveLoaded = 1;
 	String saveName;
 	
 	boolean newSaveCreated = false;
 	
 	boolean tutorialComplete = false;
-	
-	Window window;
 	
 	//Save format
 	//
@@ -69,7 +64,7 @@ public class Save{
 		
 		if(saves.length > 0){
 			if(displayText){
-				text.printTextAddLine(new String[] {"Load from which save? (Enter a number)", "Type 'new' to create a new save.", "Type 'delete' to delete a save file.", ""});
+				Text.printLineExtra(new String[]{"Load from which save? (Enter a number)", "Type 'new' to create a new save.", "Type 'delete' to delete a save file.", ""});
 				
 				for(int i = 0; i < saves.length; i++){
 					if(saves[i].getName().startsWith("save_") && saves[i].getName().endsWith(".txt")){
@@ -94,7 +89,7 @@ public class Save{
 						
 						savesAvailable = temp.clone();
 						
-						text.printText(getSaveInfo(fileNum));
+						Text.printLine(getSaveInfo(fileNum));
 					}
 				}
 			}
@@ -105,29 +100,29 @@ public class Save{
 				
 				int saveNum = -1;
 				
-				String stringChosen = text.testInput();
+				String stringChosen = Text.testInput();
 				
 				if(stringChosen.equals("new")){
 					createNewSave(false);
 					answered = true;
 				}
 				else if(stringChosen.equals("delete")){
-					text.printTextAddLine("Delete which save? (Enter a number)");
+					Text.printLineExtra("Delete which save? (Enter a number)");
 					boolean answered2 = false;
 					
 					while(!answered2){
 						try{
-							String stringChosen2 = text.testInput();
+							String stringChosen2 = Text.testInput();
 							saveNum = Integer.parseInt(stringChosen2);
 							answered2 = true;
 							
-							text.printText("Are you sure you want to permanently delete " + getSaveInfo(saveNum) + "?");
-							text.printYN();
+							Text.printLine("Are you sure you want to permanently delete " + getSaveInfo(saveNum) + "?");
+							Text.printYN();
 							boolean answered3 = false;
 							
 							while(!answered3){
 								
-								int stringChosen3 = text.testInput(new String[] {"yes", "y", "no", "n"});
+								int stringChosen3 = Text.testInput(new String[] {"yes", "y", "no", "n"});
 								
 								switch(stringChosen3){
 								case 0: case 1:
@@ -138,7 +133,7 @@ public class Save{
 										Path path = Paths.get(fileDir + fileName);
 										Files.deleteIfExists(path);
 										
-										text.printText("File deleted.");
+										Text.printLine("File deleted.");
 									}
 									catch(Exception e){
 										e.printStackTrace();
@@ -150,20 +145,20 @@ public class Save{
 									break;
 								
 								case 2: case 3:
-									text.printText("File not deleted.");
+									Text.printLine("File not deleted.");
 									answered3 = true;
 									answered = true;
 									saveSelect(true);
 									break;
 							
 								default:
-									text.printText("Input not recognized, please try again");
+									Text.printLine("Input not recognized, please try again");
 									break;
 								}
 							}
 						}
 						catch(Exception e){
-							text.printText(new String[] {"Input is not a number or is in text form.", "Please try again."});
+							Text.printLine(new String[] {"Input is not a number or is in text form.", "Please try again."});
 						}
 					}
 				}
@@ -184,13 +179,13 @@ public class Save{
 							answered = true;
 						}
 						else{
-							text.printText("Save file does not exist. Please try again.");
+							Text.printLine("Save file does not exist. Please try again.");
 							saveSelect(false);
 							return;
 						}
 					}
 					catch(Exception e){
-						text.printText(new String[] {"Input is not a number or is in text form.", "Please try again."});
+						Text.printLine(new String[] {"Input is not a number or is in text form.", "Please try again."});
 					}
 				}
 			}
@@ -208,8 +203,8 @@ public class Save{
 		
 		File[] saves = new File(fileDir +  "\\saves\\").listFiles();
 		
-		text.printTextAddLine("Enter a save name:");
-		saveName = text.testInput();
+		Text.printLineExtra("Enter a save name:");
+		saveName = Text.testInput();
 		
 		boolean saveNumFound = false;
 		int saveNum = 0;
@@ -249,17 +244,17 @@ public class Save{
 			}
 			
 			if(saveNum != 0){
-				text.printText("Save file created sucessfully.");
+				Text.printLine("Save file created sucessfully.");
 			}
 			else{
-				text.printTextAddLine(new String[] {"Save file not correctly created.", "Try ordering your save files so the" +
+				Text.printLineExtra(new String[] {"Save file not correctly created.", "Try ordering your save files so the" +
 				"numbers are not out of order, i.e:", "Change \"save_1.txt\" \"save_2.txt\" \"save_5.txt\" \"save_7.txt\"",
 				"to \"save_1.txt\" \"save_2.txt\" \"save_3.txt\" \"save_4.txt\"."});
 			}
 		}
 		else{
 			saveNum = 0;
-			text.printText("Save file created sucessfully.");
+			Text.printLine("Save file created sucessfully.");
 		}
 		
 		saveLoaded = saveNum;
@@ -287,7 +282,7 @@ public class Save{
 				bufferedReader.readLine();
 			}
 			
-			areas[0] = list.getAreaList()[Integer.parseInt(bufferedReader.readLine())];
+			areas[0] = ObjectList.getAreaList()[Integer.parseInt(bufferedReader.readLine())];
 			Area[] areasTemp = new Area[1];
 			
 			int areaNum = 1;
@@ -312,7 +307,7 @@ public class Save{
 					break;
 				}
 				
-				areasTemp[areaNum] = list.getAreaList()[Integer.parseInt(lastLine)];
+				areasTemp[areaNum] = ObjectList.getAreaList()[Integer.parseInt(lastLine)];
 				
 				areas = areasTemp.clone();
 				
@@ -365,7 +360,7 @@ public class Save{
 		return tutorialComplete;
 	}
 	
-	public Player readSave(int saveNum){
+	public void readSave(int saveNum){
 		
 		if(saveLoaded == 0){
 			saveLoaded = 1;
@@ -373,8 +368,6 @@ public class Save{
 		if(saveNum == 0){
 			saveNum = 1;
 		}
-		
-		Player player = new Player();
 		
 		String fileNum = Integer.toString(saveNum);
 		String fileName = "\\saves\\" + "save_" + fileNum + ".txt";
@@ -387,18 +380,18 @@ public class Save{
 				bufferedReader.readLine();
 			}
 			
-			player.setClassType(Integer.parseInt(bufferedReader.readLine()));
+			Player.setClassType(Integer.parseInt(bufferedReader.readLine()));
 			
-			player.setLevel(Integer.parseInt(bufferedReader.readLine()));
-			player.setXP(Integer.parseInt(bufferedReader.readLine()));
+			Player.setLevel(Integer.parseInt(bufferedReader.readLine()));
+			Player.setXP(Integer.parseInt(bufferedReader.readLine()));
 			
-			player.updatePlayer();
+			Player.updatePlayer();
 			
-			player.setHealth(Integer.parseInt(bufferedReader.readLine()));
-			player.setMagic(Integer.parseInt(bufferedReader.readLine()));
-			player.setGold(Integer.parseInt(bufferedReader.readLine()));
+			Player.setHealth(Integer.parseInt(bufferedReader.readLine()));
+			Player.setMagic(Integer.parseInt(bufferedReader.readLine()));
+			Player.setGold(Integer.parseInt(bufferedReader.readLine()));
 			
-			player.updatePlayer();
+			Player.updatePlayer();
 			
 			final Item emptyItem = new Item();
 			
@@ -425,7 +418,7 @@ public class Save{
 					}
 				}
 				
-				Item[] itemList = list.getNormalWeaponItemList();
+				Item[] itemList = ObjectList.getNormalWeaponItemList();
 				
 				lastLine = bufferedReader.readLine();
 				
@@ -437,19 +430,19 @@ public class Save{
 				
 				switch(listNum){
 					case 1:
-						itemList = list.getSpecialWeaponItemList();
+						itemList = ObjectList.getSpecialWeaponItemList();
 						break;
 	
 					case 2:
-						itemList = list.getArmorItemList();
+						itemList = ObjectList.getArmorItemList();
 						break;
 	
 					case 3:
-						itemList = list.getConsumableItemList();
+						itemList = ObjectList.getConsumableItemList();
 						break;
 	
 					case 4:
-						itemList = list.getMiscItemList();
+						itemList = ObjectList.getMiscItemList();
 						break;
 				}
 				
@@ -486,9 +479,9 @@ public class Save{
 				itemNum++;
 			}
 			
-			player.setInventory(inventory);
-			player.setInventoryItemCount(inventoryItemCount);
-			player.updatePlayer();
+			Player.setInventory(inventory);
+			Player.setInventoryItemCount(inventoryItemCount);
+			Player.updatePlayer();
 			
 			final StatusEffect emptyEffect = new StatusEffect();
 			
@@ -514,20 +507,18 @@ public class Save{
 				effectNum++;
 			}
 			
-			player.setStatusEffects(statusEffects);
-			player.updatePlayer();
+			Player.setStatusEffects(statusEffects);
+			Player.updatePlayer();
 			
 			bufferedReader.close();
 		}
 		catch(Exception e){
-			text.printTextAddLine("Error while reading from save file!");
+			Text.printLineExtra("Error while reading from save file!");
 			e.printStackTrace();
 		}
-		
-		return player;
 	}
 	
-	public void save(int saveNum, String saveName, Area area, Area[] accessibleAreas, Player player){
+	public void save(int saveNum, String saveName, Area area, Area[] accessibleAreas){
 		
 		if(saveLoaded == 0){
 			saveLoaded = 1;
@@ -558,32 +549,32 @@ public class Save{
 			bufferedWriter.write(saveName);
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(list.getAreaInfo(area)));
+			bufferedWriter.write(Integer.toString(ObjectList.getAreaInfo(area)));
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(player.getClassType()));
+			bufferedWriter.write(Integer.toString(Player.getClassType()));
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(player.getLevel()));
+			bufferedWriter.write(Integer.toString(Player.getLevel()));
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(player.getXP()));
+			bufferedWriter.write(Integer.toString(Player.getXP()));
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(player.getHealth()));
+			bufferedWriter.write(Integer.toString(Player.getHealth()));
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(player.getMagic()));
+			bufferedWriter.write(Integer.toString(Player.getMagic()));
 			bufferedWriter.newLine();
 			
-			bufferedWriter.write(Integer.toString(player.getGold()));
+			bufferedWriter.write(Integer.toString(Player.getGold()));
 			bufferedWriter.newLine();
 			
 			bufferedWriter.write("inv_start");
 			bufferedWriter.newLine();
 			
-			for(int i = 0; i < player.getInventory().length; i++){
-				int[] itemData = list.getItemInfo(player.getInventory()[i]);
+			for(int i = 0; i < Player.getInventory().length; i++){
+				int[] itemData = ObjectList.getItemInfo(Player.getInventory()[i]);
 				
 				bufferedWriter.write(Integer.toString(itemData[0]));
 				bufferedWriter.newLine();
@@ -591,7 +582,7 @@ public class Save{
 				bufferedWriter.write(Integer.toString(itemData[1]));
 				bufferedWriter.newLine();
 				
-				bufferedWriter.write(Integer.toString(player.getInventoryItemCount()[i]));
+				bufferedWriter.write(Integer.toString(Player.getInventoryItemCount()[i]));
 				bufferedWriter.newLine();
 			}
 			bufferedWriter.write("inv_end");
@@ -600,8 +591,8 @@ public class Save{
 			bufferedWriter.write("stats_start");
 			bufferedWriter.newLine();
 			
-			for(int i = 0; i < player.getStatusEffects().length; i++){
-				int[] effectData = {player.getStatusEffects()[i].getType(), player.getStatusEffects()[i].getLength(), player.getStatusEffects()[i].getLevel()};
+			for(int i = 0; i < Player.getStatusEffects().length; i++){
+				int[] effectData = {Player.getStatusEffects()[i].getType(), Player.getStatusEffects()[i].getLength(), Player.getStatusEffects()[i].getLevel()};
 				
 				bufferedWriter.write(Integer.toString(effectData[0]));
 				bufferedWriter.newLine();
@@ -619,7 +610,7 @@ public class Save{
 			bufferedWriter.newLine();
 			
 			for(int i = 0; i < accessibleAreas.length; i++){
-				int areaData = list.getAreaInfo(accessibleAreas[i]);
+				int areaData = ObjectList.getAreaInfo(accessibleAreas[i]);
 				
 				bufferedWriter.write(Integer.toString(areaData));
 				bufferedWriter.newLine();
@@ -697,10 +688,10 @@ public class Save{
 		try{
 			FileReader fileReader = new FileReader(fileDir + fileName);
 			BufferedReader bufferedReader = new BufferedReader(fileReader);
-
+			
 			bufferedReader.readLine();
 			saveName = bufferedReader.readLine();
-			areaName = list.getAreaList()[Integer.parseInt(bufferedReader.readLine())].getName();
+			areaName = ObjectList.getAreaList()[Integer.parseInt(bufferedReader.readLine())].getName();
 			className = "Knight";
 			
 			switch(Integer.parseInt(bufferedReader.readLine())){
@@ -753,9 +744,4 @@ public class Save{
 		saveName = getSaveName(saveLoaded);
 	}
 	
-	public void setWindow(Window window){
-		this.window = window;
-		list.setWindow(window);
-		text.setWindow(window);
-	}
 }

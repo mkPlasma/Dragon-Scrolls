@@ -1,7 +1,6 @@
 package game;
 
 import java.awt.Color;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 
@@ -13,7 +12,7 @@ public class CommandHandler{
 		
 		"inventory",
 		"items",
-		"inv",
+		"i",
 		
 		"area",
 		"a",
@@ -38,7 +37,7 @@ public class CommandHandler{
 		"l",
 		
 		"interact",
-		"i",
+		"in",
 		
 		"map",
 		"m",
@@ -76,214 +75,214 @@ public class CommandHandler{
 	};
 	
 	private final String[] tips = {"You can rest after a battle to recover your stats.",
-		"When entering a new area, look then try interacting with things you find.",
+		"When entering a new area, look around then try interacting with things you find.",
 		"Use an item during a battle to recover your stats.",
-		"Examine an enemy to see its status effects."};
+		"Examine an enemy to see its status effects.",
+		"If you find an item you don't need, sell it to a tradesman.",
+		"You can view all the stats of every item you own in your inventory menu.",
+		"In battle, you can change your equipment."};
 	
-	private Text text = new Text();
-	private ObjectList list = new ObjectList();
-	
-	private Player player = new Player();
-	private Enemy enemy = list.getEnemyList()[0];
+	private Enemy enemy = ObjectList.getEnemyList()[0];
 	private Enemy lastEnemyKilled;
 	
-	private AreaHandler areaHandler;
-	
 	private Save save = new Save();
-	private Random random = new Random();
-	private Sound sound = new Sound();
-	
-	private Window window;
 	
 	private boolean incrementUpdateTick;
 	private boolean inFight = false;
-	
-	private boolean waitEnabled;
-	private boolean soundEnabled;
-	private boolean debugMode = false;
 	
 	private boolean randomizeEncounter = true;
 	private boolean tutorialComplete = false;
 	
 	private int restCounter = 0;
-
+	
 	private final Item emptyItem = new Item();
 	private final StatusEffect emptyEffect = new StatusEffect();
 	
-	private final Color DARK_GREEN = new Color(0, 128, 0), GOLD = new Color(96, 96, 0);
+	private final Color COLOR_DARK_GREEN = new Color(0, 128, 0), COLOR_GOLD = new Color(96, 96, 0);
 	
 	public void commands(){
 		
-		text.printTextAddLine("Input a command:");
+		Text.printLineExtra("Input a command:");
 		
-		int stringChosen = text.testInput(acceptedInput);
+		int stringChosen = Text.testInput(acceptedInput);
 		incrementUpdateTick = false;
 		randomizeEncounter = true;
 		updatePlayer(false);
 		
 		if(stringChosen == -1){
-			stringChosen = text.testInput(text.trimToSpace(text.getLastInput()), acceptedInput);
+			stringChosen = Text.testInput(Text.trimToSpace(Text.getLastInput()), acceptedInput);
 		}
 		
 		switch(stringChosen){
-		case 0: case 1:
-			helpMenu(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 2: case 3: case 4:
-			inventory(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 5: case 6:
-			text.printTextAddLine("You are currently in ");
-			text.print(areaHandler.getArea().getName(), areaHandler.getArea().getColor());
-			text.print(".");
-			break;
-		
-		case 7: case 8: case 9: case 10: case 11:
-			useItem(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 12: case 13:
-			equipItem(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 14: case 15:
-			printStats();
-			break;
-		
-		case 16: case 17: case 18:
-			shop(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 19: case 20:
-			text.printTextAddLine("Looking around...");
-			waitSeconds(1, false);
-			text.printText(areaHandler.getArea().getSurroundings());
-			incrementUpdateTick = true;
-			break;
-		
-		case 21: case 22:
-			interact(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 23: case 24:
-			text.printTextAddLine("Your map:");
+			case 0: case 1: // help
+				helpMenu(Text.trimFromSpace(Text.getLastInput()));
+				break;
 			
-			Area[] accessibleAreas = areaHandler.getAccessibleAreas();
+			case 2: case 3: case 4: // inventory
+				inventory(Text.trimFromSpace(Text.getLastInput()));
+				break;
 			
-			for(int i = 0; i < accessibleAreas.length; i++){
-				text.printText(accessibleAreas[i].getName(), accessibleAreas[i].getColor());
-			}
+			case 5: case 6: // area
+				Text.printLineExtra("You are currently in ");
+				Text.print(AreaHandler.getArea().getName(), AreaHandler.getArea().getColor());
+				Text.print(".");
+				break;
 			
-			break;
-		
-		case 25: case 26: case 27:
-			text.printTextAddLine("You have ");
-			text.print(Integer.toString(player.getGold()) + " gold", GOLD);
-			text.print(".");
-			break;
-		
-		case 28: case 29: case 30: case 31:
-			goTo(text.trimFromSpace(text.getLastInput()));
-			break;
-		
-		case 32: case 33: case 34:
-			options(text.trimFromSpace(text.getLastInput()));
-			break;
+			case 7: case 8: case 9: case 10: case 11: // use
+				useItem(Text.trimFromSpace(Text.getLastInput()));
+				break;
 			
-		case 35: case 36:
-			if(debugMode){
-				executeCommand(true);
-			}
-			else{
-				text.printText("Input not recognized, please try again");
-			}
-			break;
-		
-		case 37: case 38:
-			text.printTextAddLine("You are ");
-			text.print("level " + Integer.toString(player.getLevel()), GOLD);
-			text.print(" with ");
-			text.print(Integer.toString(player.getXP()) + "/" + Integer.toString(player.getXPReq()) + " XP (" + Integer.toString(player.getXPReq() - player.getXP()) + ")", DARK_GREEN);
-			text.print(" remaining.");
-			break;
-		
-		case 39: case 40:
-			text.printText("Saving...");
-			if(!debugMode){
-				save.setTutorialComplete(tutorialComplete);
-				save.save(save.getSaveLoaded(), save.getSaveName(), areaHandler.getArea(), areaHandler.getAccessibleAreas(), player);
-			}
-			text.printText("Game saved.");
-
-			displayTip();
+			case 12: case 13: // equip
+				equipItem(Text.trimFromSpace(Text.getLastInput()));
+				break;
 			
-			break;
-		
-		case 41: case 42:
-			text.printText("Hunting...");
-			waitSeconds(random.nextInt(1) + 1, false);
-			randomizeEncounter = false;
+			case 14: case 15: // stats
+				printStats();
+				break;
 			
-			if(areaHandler.getArea().getEncounters().length == 0){
-				text.printText("You couldn't find any enemies.");
-			}
+			case 16: case 17: case 18: // shop
+				shop(Text.trimFromSpace(Text.getLastInput()));
+				break;
 			
-			incrementUpdateTick = true;
-			break;
-		
-		case 43: case 44:
-			
-			if(restCounter <= 0){
-				text.printText("Resting...");
-				waitSeconds(2, false);
-				
-				for(int i = 0; i < 3; i++){
-					player.updateStats();
-				}
-				
-				restCounter = 5;
+			case 19: case 20: // look
+				Text.printLineExtra("Looking around...");
+				waitSeconds(1, false);
+				Text.printLine(AreaHandler.getArea().getSurroundings());
 				incrementUpdateTick = true;
-			}
-			else{
-				text.printText("You have just rested, you cannot rest again.");
-			}
+				break;
 			
-			break;
-		case 45: case 46:
-			text.printTextAddLine("Save before exiting?");
-			text.printYN();
+			case 21: case 22: // interact
+				interact(Text.trimFromSpace(Text.getLastInput()));
+				break;
 			
-			boolean answered = false;
-			
-			while(!answered){
-				stringChosen = text.testInput(new String[]{"yes", "y", "no", "n", "back", "b"});
+			case 23: case 24: // map
+				Text.printLineExtra("Your map:");
 				
-				switch(stringChosen){
-				case 0: case 1:
-					text.printText("Saving...");
-					if(!debugMode){
-						save.setTutorialComplete(tutorialComplete);
-						save.save(save.getSaveLoaded(), save.getSaveName(), areaHandler.getArea(), areaHandler.getAccessibleAreas(), player);
-					}
-					text.printText("Game saved.");
-					
-					System.exit(0);
-				case 2: case 3:
-					System.exit(0);
-				case 4: case 5:
-					break;
-				default:
-					text.printText("Input not recognized, please try again");
-					break;
+				for(Area a : AreaHandler.getAccessibleAreas()){
+					Text.printLine(a.getName(), a.getColor());
 				}
-			}
+				
+				break;
 			
-			break;
-		default:
-			text.printText("Input not recognized, please try again");
-			break;
+			case 25: case 26: case 27: // gold
+				Text.printLineExtra("You have ");
+				Text.print(Integer.toString(Player.getGold()) + " gold", COLOR_GOLD);
+				Text.print(".");
+				break;
+			
+			case 28: case 29: case 30: case 31: // goto
+				goTo(Text.trimFromSpace(Text.getLastInput()));
+				break;
+			
+			case 32: case 33: case 34: // options
+				options(Text.trimFromSpace(Text.getLastInput()));
+				break;
+				
+			case 35: case 36: // command (debug)
+				if(Settings.debugEnabled()){
+					executeCommand(true);
+				}
+				else{
+					Text.printLine("Input not recognized, please try again");
+				}
+				break;
+			
+			case 37: case 38: // xp
+				Text.printLineExtra("You are ");
+				Text.print("level " + Integer.toString(Player.getLevel()), COLOR_GOLD);
+				Text.print(" with ");
+				Text.print(Integer.toString(Player.getXP()) + "/" + Integer.toString(Player.getXPReq()) + " XP (" + Integer.toString(Player.getXPReq() - Player.getXP()) + ")", COLOR_DARK_GREEN);
+				Text.print(" remaining.");
+				break;
+			
+			case 39: case 40: // save
+				Text.printLine("Saving...");
+				if(!Settings.debugEnabled()){
+					save.setTutorialComplete(tutorialComplete);
+					save.save(save.getSaveLoaded(), save.getSaveName(), AreaHandler.getArea(), AreaHandler.getAccessibleAreas());
+				}
+				Text.printLine("Game saved.");
+	
+				displayTip();
+				
+				break;
+			
+			case 41: case 42: // hunt
+				Text.printLine("Hunting...");
+				waitSeconds(RandomGen.getInt(1, 2), false);
+				randomizeEncounter = false;
+				
+				if(AreaHandler.getArea().getEncounters().length == 0){
+					Text.printLine("You couldn't find any enemies.");
+				}
+				
+				incrementUpdateTick = true;
+				break;
+			
+			case 43: case 44: // rest
+				
+				if(restCounter <= 0){
+					Text.printLine("Resting...");
+					waitSeconds(2, false);
+					
+					int hp = Player.getHealth();
+					int mp = Player.getMagic();
+					
+					Player.restoreStats();
+					
+					Text.printLine("You recovered ");
+					Text.print(Integer.toString(Player.getHealth() - hp) + " health", Color.RED);
+					Text.print(" and ");
+					Text.print(Integer.toString(Player.getMagic() - mp) + " magic", Color.BLUE);
+					Text.print(".");
+					
+					Text.printLine("You now have ");
+					Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+					Text.print(" and ");
+					Text.print(Integer.toString(Player.getMagic()) + "/" + Integer.toString(Player.getMaxMagic()) + " magic", Color.BLUE);
+					Text.print(".");
+					
+					restCounter = 5;
+					incrementUpdateTick = true;
+				}
+				else{
+					Text.printLine("You have just rested, you cannot rest again for now.");
+				}
+				
+				break;
+			case 45: case 46: // exit
+				Text.printLineExtra("Save before exiting?");
+				Text.printYN();
+				
+				boolean answered = false;
+				
+				while(!answered){
+					stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n", "back", "b"});
+					
+					switch(stringChosen){
+					case 0: case 1:
+						Text.printLine("Saving...");
+						if(!Settings.debugEnabled()){
+							save.setTutorialComplete(tutorialComplete);
+							save.save(save.getSaveLoaded(), save.getSaveName(), AreaHandler.getArea(), AreaHandler.getAccessibleAreas());
+						}
+						Text.printLine("Game saved.");
+						
+						System.exit(0);
+					case 2: case 3:
+						System.exit(0);
+					case 4: case 5:
+						break;
+					default:
+						Text.printLine("Input not recognized, please try again");
+						break;
+					}
+				}
+				
+				break;
+			default:
+				Text.printLine("Input not recognized, please try again");
+				break;
 		}
 		
 		updatePlayer(false);
@@ -293,19 +292,19 @@ public class CommandHandler{
 	private void helpMenu(String input){
 		
 		if(input.equals("")){
-			text.printTextAddLine(new String[]{"What do you need help with?", "Commands", "Status Effects", "Dragon Scrolls", "Gameplay", "Combat", "back"});
+			Text.printLineExtra(new String[]{"What do you need help with?", "Commands", "Status Effects", "Dragon Scrolls", "Gameplay", "Combat", "Back"});
 		}
 		
 		int stringChosen = -1;
 		
 		if(input.equals("")){
-			stringChosen = text.testInput(new String[]{"commands", "command", "status effects", "status effect", "status", "effects", "effect", "dragon scrolls", "dragon", "dscrolls", "scrolls", "scroll", "gameplay", "game", "play", "combat", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"commands", "command", "status effects", "status effect", "status", "effects", "effect", "dragon scrolls", "dragon", "dscrolls", "scrolls", "scroll", "gameplay", "game", "play", "combat", "back", "b"});
 		}
 		else{
-			stringChosen = text.testInput(input, new String[]{"commands", "command", "status effects", "status effect", "status", "effects", "effect", "dragon scrolls", "dragon", "dscrolls", "scrolls", "scroll", "gameplay", "game", "play", "combat", "back", "b"});
+			stringChosen = Text.testInput(input, new String[]{"commands", "command", "status effects", "status effect", "status", "effects", "effect", "dragon scrolls", "dragon", "dscrolls", "scrolls", "scroll", "gameplay", "game", "play", "combat", "back", "b"});
 			
 			if(stringChosen == -1){
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				return;
 			}
 		}
@@ -320,87 +319,119 @@ public class CommandHandler{
 				return;
 			
 			case 2: case 3: case 4: case 5:
-				text.addLine();
-				text.printText("Buffs", DARK_GREEN);
-				text.print(":");
-				text.printText(new String[]{"Regeneration: Increases the user's health over time.", "Magic Regeneration: Increases the user's magic over time.", "Defense Buff: Increases the user's defense.", "Strength: Increases the user's damage output.",
-				"Health/Magic Max Increase: Temporarily increases your maximum health/magic.", "Barrier: The user has a chance to completly block incoming attacks.", "Absorption: Heals instead of taking damage."});
-				text.addLine();
-				text.printText("Debuffs", Color.RED);
-				text.print(":");
-				text.printText(new String[]{"Imprison: Disables special attacks.", "Lock: Disables item use.", "Paralysis: Cannot go to different locations or run from battles.", "Bleed and Burn: Decreases the target's health over time.",
-				"Poison and Magic Steal: Decreases magic over time.", "Weakness: Decreases the target's damage output.", "Defense Break: Decreases the target's defense.", "Health/Magic Max Decrease: Temporarily decreases your maximum health/magic.",
-				"Confusion: The target has a chance to fail an attack."});
+				Text.addLine();
+				
+				Text.printLine("Buffs", COLOR_DARK_GREEN);
+				Text.print(":");
+				
+				Text.printLine("Regeneration", COLOR_DARK_GREEN);
+				Text.print(": Increases the user's health over time.");
+				Text.printLine("Magic Regeneration", COLOR_DARK_GREEN);
+				Text.print(": Increases the user's magic over time.");
+				Text.printLine("Defense Buff", COLOR_DARK_GREEN);
+				Text.print(": Increases the user's defense.");
+				Text.printLine("Strength", COLOR_DARK_GREEN);
+				Text.print(": Increases the user's damage output.");
+				Text.printLine("Health/Magic Max Increase", COLOR_DARK_GREEN);
+				Text.print(": Temporarily increases your maximum health/magic.");
+				Text.printLine("Barrier", COLOR_DARK_GREEN);
+				Text.print(": The user has a chance to completly block incoming attacks.");
+				Text.printLine("Absorption", COLOR_DARK_GREEN);
+				Text.print(": Heals instead of taking damage.");
+				
+				Text.addLine();
+				Text.printLine("Debuffs", Color.RED);
+				Text.print(":");
+				
+				Text.printLine("Imprison", Color.RED);
+				Text.print(": Disables special attacks.");
+				Text.printLine("Lock", Color.RED);
+				Text.print(": Disables item use.");
+				Text.printLine("Paralysis", Color.RED);
+				Text.print(": Cannot go to different locations or run from battles.");
+				Text.printLine("Bleed and Burn", Color.RED);
+				Text.print(": Decreases the target's health over time.");
+				Text.printLine("Poison and Magic Steal");
+				Text.print(": Decreases magic over time.");
+				Text.printLine("Weakness", Color.RED);
+				Text.print(": Decreases the target's damage output.");
+				Text.printLine("Defense Break", Color.RED);
+				Text.print(": Decreases the target's defense.");
+				Text.printLine("Health/Magic Max Decrease");
+				Text.print(": Temporarily decreases your maximum health/magic.");
+				Text.printLine("Confusion", Color.RED);
+				Text.print(": The target has a chance to fail an attack.");
+				
 				displayText = true;
 				break;
 			
 			case 6: case 7: case 8: case 9: case 10: case 11:
-				text.addLine();
-				text.printText("The");
-				text.print("Dragon Scrolls", list.DRAGON);
-				text.print(" are very rare, special spells with extreme power.");
-				text.printText(new String[]{"Each is made for knights, archers, or mages, and are comprised of magic used by dragons.", "Thus, they are the guardians of these spells. " +
-				"They were created by an ancient guild of mages, for adventurers.", "They realized their potential, and summoned six dragons, each in a respective mountain, to protect the scrolls.", "Those who defeat these dragons prove themselves worthy of " +
+				Text.printLineExtra("The ");
+				Text.print("Dragon Scrolls", ObjectList.COLOR_DRAGON);
+				Text.print(" are very rare, special spells with extreme power.");
+				Text.printLine(new String[]{"Each is made for knights, archers, or mages, and are comprised of magic used by dragons.", "Thus, they are the guardians of these spells. " +
+				"The spells were created by an ancient guild of mages, for adventurers.", "They realized their potential, and summoned six dragons, each in a respective mountain, to protect the scrolls.", "Those who defeat these dragons prove themselves worthy of " +
 				"the scrolls and, therefore, obtain their power.", "", "The list of dragons is as follows:"});
-				text.printText(new String[]{"Dragon: Dragonstone Mountain", "Inorexite Dragon: Monolith Mountain", "Earth Core Dragon: Earthkey Mountain", "Fire Hydra: Hydra Hell Castle",
-				"Black Void Dragon: Void Mountain", "Nova Dragon: Azure Star Mountain"}, list.DRAGON);
-				text.printTextAddLine("The list of Dragon Scrolls is as follows:");
-				text.printText(new String[]{"Dragon Scroll I: Magic Arrow Storm", "Dragon Scroll II: Cosmic Speed Quiver", "Dragon Scroll III: Arcane Summoning Sword",
+				Text.printLine(new String[]{"Dragon: Dragonstone Mountain", "Inorexite Dragon: Monolith Mountain", "Earth Core Dragon: Earthkey Mountain", "Fire Hydra: Hydra Hell Castle",
+				"Black Void Dragon: Void Mountain", "Nova Dragon: Azure Star Mountain"}, ObjectList.COLOR_DRAGON);
+				Text.printLineExtra("The list of Dragon Scrolls is as follows:");
+				Text.printLine(new String[]{"Dragon Scroll I: Magic Arrow Storm", "Dragon Scroll II: Cosmic Speed Quiver", "Dragon Scroll III: Arcane Summoning Sword",
 				"Dragon Scroll IV: Colossal Buffer Shield", "Dragon Scroll V: Ancient Spells of Wizardry", "Dragon Scroll VI: Geological Destruction Spell", "Dragon Scroll VII: Solar Flame Spell", "Dragon Scroll VIII: Infinity Banishment Spell",
-				"Dragon Scroll IX: Magic Singularity Spell"}, list.DRAGON);
+				"Dragon Scroll IX: Magic Singularity Spell"}, ObjectList.COLOR_DRAGON);
+				
 				displayText = true;
 				break;
 			
 			case 12: case 13: case 14:
-				text.addLine();
-				text.printText(new String[]{"The general goal of the game is simply to advance to new areas, level up, and find new items.", "There is also the task of defeating the "});
-				text.print("Dragon God", list.GOD);
-				text.print(" which will reward you with something very special.");
-				text.printText("If you wish to get to the ");
-				text.print("Dragon God", list.GOD);
-				text.print(", you'll have to progress far enough until you can confront him and prove yourself in battle.");
-				text.printTextAddLine(new String[]{"Syntax:", "Commands are not case sensitive. Some commands, such as ones that have attacks, items, or " +
+				Text.printLineExtra(new String[]{"The general goal of the game is simply to advance to new areas, level up, and find new items.", "There is also the task of defeating the "});
+				Text.print("Dragon God", ObjectList.COLOR_GOD);
+				Text.print(" which will reward you with something very special.");
+				Text.printLine("If you wish to get to the ");
+				Text.print("Dragon God", ObjectList.COLOR_GOD);
+				Text.print(", you'll have to progress far enough until you can confront him and prove yourself in battle.");
+				Text.printLineExtra(new String[]{"Syntax:", "Commands are not case sensitive. Some commands, such as ones that have attacks, items, or " +
 				"interactions, require you to type the full name of the selection.", "In some cases, such as goto or equip, you can type the command and extra input in the same command (e.g. equip dragon scroll i)."});
+				
 				displayText = true;
 				break;
 			
 			case 15:
-				text.addLine();
-				text.printText(new String[]{"Combat in the game is turn-based.", "Some stronger enemies will attack before you have the chance to, but you will be able to attack weaker ones first.", "", "When fighting, you can choose from a list " +
+				Text.printLineExtra(new String[]{"Combat in the game is turn-based.", "Some stronger enemies will attack before you have the chance to, but you will be able to attack weaker ones first.", "", "When fighting, you can choose from a list " +
 				"of commands. These include:", "Attack: Use an attack from your normal or special weapon.", "Items: Use an item in your inventory.", "Equip: Equip an item in your inventory.", "Stats: View your HP, MP, and defense.", "Examine Enemy: View the enemy's HP " +
 				", defense, and status effects.", "Run: Attempt to escape from the battle.", "Attacking, using an item, or attempting to run will use your turn and allow the enemy to attack.", "", "Upon killing an enemy, you will recieve some XP and gold, along with any items the enemy may " +
 				"have dropped."});
+				
 				displayText = true;
 				break;
 			
 			case 16: case 17:
-				text.printText("Exited the help menu.");
+				Text.printLineExtra("Exited the help menu.");
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				displayText = false;
 				break;
 			}
 			
 			if(displayText){
-				text.printTextAddLine(new String[]{"What do you need help with?", "Commands", "Status Effects", "Dragon Scrolls", "Gameplay", "Combat", "back"});
+				Text.printLineExtra(new String[]{"What do you need help with?", "Commands", "Status Effects", "Dragon Scrolls", "Gameplay", "Combat", "Back"});
 			}
 			
-			stringChosen = text.testInput(new String[]{"commands", "command", "status effects", "status effect", "status", "effects", "effect", "dragon scrolls", "dragon", "dscrolls", "scrolls", "scroll", "gameplay", "game", "play", "combat", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"commands", "command", "status effects", "status effect", "status", "effects", "effect", "dragon scrolls", "dragon", "dscrolls", "scrolls", "scroll", "gameplay", "game", "play", "combat", "back", "b"});
 		}
 	}
 	
 	//Help Commands menu
 	private void helpMenuCommands(){
-		text.printTextAddLine("Would you like a list of commands or a detailed description?");
+		Text.printLineExtra("Would you like a list of commands or a detailed description?");
 		
-		int stringChosen = text.testInput(new String[]{"list of commands", "list of command", "commands list", "command list", "list", "commands", "command", "detailed description", "detail description", "detailed desc", "detail desc", "detailed", "details", "detail", "description", "desc", "back", "b"});
+		int stringChosen = Text.testInput(new String[]{"list of commands", "list of command", "commands list", "command list", "list", "commands", "command", "detailed description", "detail description", "detailed desc", "detail desc", "detailed", "details", "detail", "description", "desc", "back", "b"});
 		
 		while(true){
 			switch(stringChosen){
 			case 0: case 1: case 2: case 3: case 4: case 5: case 6: case 7:
-				text.printText(new String[]{"", " Help/hp", " Inventory/inv/i", " Area/a", " Use/u", " Equip/e", " Stats/st", " Shop/s", " Look/l", " Interact/i", " Map/m", " Gold/gp", " Goto/g", " Options/o", " XP/x", " Save/sv", " Hunt/h", " Rest/r", "Exit/Quit", "Exited the help menu."});
+				Text.printLine(new String[]{"", " Help/hp", " Inventory/inv/i", " Area/a", " Use/u", " Equip/e", " Stats/st", " Shop/s", " Look/l", " Interact/i", " Map/m", " Gold/gp", " Goto/g", " Options/o", " XP/x", " Save/sv", " Hunt/h", " Rest/r", "Exit/Quit", "Exited the help menu."});
 				return;
 			
 			case 8: case 9: case 10: case 11: case 12: case 13: case 14: case 15: case 16:
@@ -411,18 +442,18 @@ public class CommandHandler{
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"list of commands", "list of command", "commands list", "command list", "list", "commands", "command", "detailed description", "detail description", "detailed desc", "detail desc", "detailed", "details", "detail", "description", "desc", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"list of commands", "list of command", "commands list", "command list", "list", "commands", "command", "detailed description", "detail description", "detailed desc", "detail desc", "detailed", "details", "detail", "description", "desc", "back", "b"});
 		}
 	}
 	
 	//Help Commands (specific) menu
 	private void helpMenuCommandsSub(){
 		
-		text.printTextAddLine("Type a command and a description will be shown.");
+		Text.printLineExtra("Type a command and a description will be shown.");
 		
 		String[] input = new String[acceptedInput.length + 2];
 		
@@ -433,111 +464,111 @@ public class CommandHandler{
 		input[input.length - 1] = "b";
 		input[input.length - 2] = "back";
 		
-		int stringChosen = text.testInput(input);
+		int stringChosen = Text.testInput(input);
 		
 		while(true){
 			switch(stringChosen){
 			case 0: case 1:
-				text.printText("Help/hp: Displays the help menu.");
+				Text.printLine("Help/hp: Displays the help menu.");
 				break;
 				
 			case 2: case 3: case 4:
-				text.printText("Inventory/inv/in: Displays your inventory.");
+				Text.printLine("Inventory/i: Displays your inventory.");
 				break;
 				
 			case 5: case 6:
-				text.printText("Area/a: Displays your current location.");
+				Text.printLine("Area/a: Displays your current location.");
 				break;
 				
 			case 7: case 8: case 9: case 10: case 11:
-				text.printText("Use/u: Use an item in your inventory.");
+				Text.printLine("Use/u: Use an item in your inventory.");
 				break;
 				
 			case 12: case 13:
-				text.printText("Equip/eq: Shows your equipped items, or equip different items.");
+				Text.printLine("Equip/eq: Shows your equipped items, or equip different items.");
 				break;
 				
 			case 14: case 15:
-				text.printText("Stats/st: Displays your health, magic, and defense.");
+				Text.printLine("Stats/st: Displays your health, magic, and defense.");
 				break;
 				
 			case 16: case 17: case 18:
-				text.printText("Shop/s: Buy items at a shop when available.");
+				Text.printLine("Shop/s: Buy items at a shop when available.");
 				break;
 				
 			case 19: case 20:
-				text.printText("Look/l: Observes your surroundings.");
+				Text.printLine("Look/l: Observes your surroundings.");
 				break;
 				
 			case 21: case 22:
-				text.printText("Interact/i: Interact with your surroundings.");
+				Text.printLine("Interact/in: Interact with your surroundings.");
 				break;
 				
 			case 23: case 24:
-				text.printText("Map/m: View accessible areas on the region map.");
+				Text.printLine("Map/m: View accessible areas on the region map.");
 				break;
 				
 			case 25: case 26: case 27:
-				text.printText("Gold/gp: View your current gold.");
+				Text.printLine("Gold/gp: View your current gold.");
 				break;
 				
 			case 28: case 29: case 30: case 31:
-				text.printText("Goto/g: Go to a specified location.");
+				Text.printLine("Goto/g: Go to a specified location.");
 				break;
 				
 			case 32: case 33: case 34:
-				text.printText("Options/o: Menu for enabling sound, waiting, and other options.");
+				Text.printLine("Options/o: Menu for enabling sound, waiting, and other options.");
 				break;
 				
 			case 37: case 38:
-				text.printText("XP/x: Shows your current level and experience.");
+				Text.printLine("XP/x: Shows your current level and experience.");
 				break;
 				
 			case 39: case 40:
-				text.printText("Save/sv: Saves your game if possible.");
+				Text.printLine("Save/sv: Saves your game if possible.");
 				break;
 				
 			case 41: case 42:
-				text.printText("Hunt/h: Hunts for an enemy.");
+				Text.printLine("Hunt/h: Hunts for an enemy.");
 				break;
 				
 			case 43: case 44:
-				text.printText("Rest/r: Rests to regain your stats.");
+				Text.printLine("Rest/r: Rests to regain your stats.");
 				break;
 				
 			case 45: case 46:
-				text.printText("Exit/Quit: Prompts to save then exits the game.");
+				Text.printLine("Exit/Quit: Prompts to save then exits the game.");
 				break;
 				
 			case 47: case 48:
-				text.printTextAddLine("Exited the help menu.");
+				Text.printLineExtra("Exited the help menu.");
 				return;
 				
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(input);
+			stringChosen = Text.testInput(input);
 		}
 	}
 	
 	//Inventory main menu
 	private void inventory(String input){
 		
-		Item[] inv = player.getInventory();
+		Item[] inv = Player.getInventory();
 		
 		if(input.equals("")){
-			text.printTextAddLine("Your Inventory (" + Integer.toString(player.getOpenInventorySlots()) + "/" + Integer.toString(player.getInventory().length - 3) + ") Slots full:");
+			Text.printLineExtra("Your Inventory (" + Integer.toString(Player.getOpenInventorySlots()) + "/" + Integer.toString(Player.getInventory().length - 3) + ") Slots full:");
 			
 			for(int i = 3; i < inv.length; i++){
 				if(!inv[i].getName().equals(emptyItem.getName())){
-					text.printText(" ");
-					text.print(inv[i].getName(), inv[i].getColor());
-					text.print(" [" + Integer.toString(player.getItemCountInInventorySlot(i)) + "]");
+					Text.printLine(" ");
+					Text.print(inv[i].getName(), inv[i].getColor());
+					Text.print(" [" + Integer.toString(Player.getItemCountInInventorySlot(i)) + "]");
 				}
 			}
-			text.printText("Type an item name for more options.");
+			Text.printLine("Type an item name for more options.");
 		}
 		
 		int itemNum = 0;
@@ -560,13 +591,13 @@ public class CommandHandler{
 		itemNames[itemNames.length - 2] = "back";
 		
 		if(input.equals("")){
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 		else{
-			itemNum = text.testInput(input, itemNames);
+			itemNum = Text.testInput(input, itemNames);
 			
 			if(itemNum == -1){
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					return;
 			}
 		}
@@ -583,35 +614,35 @@ public class CommandHandler{
 				displayText = true;
 			}
 			else{
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				displayText = false;
 			}
 			
 			if(displayText){
-				text.printTextAddLine("Your Inventory (" + Integer.toString(player.getOpenInventorySlots()) + "/" + Integer.toString(player.getInventory().length - 3) + ") Slots full:");
+				Text.printLineExtra("Your Inventory (" + Integer.toString(Player.getOpenInventorySlots()) + "/" + Integer.toString(Player.getInventory().length - 3) + ") Slots full:");
 				
 				for(int i = 3; i < inv.length; i++){
 					if(!inv[i].getName().equals(emptyItem.getName())){
-						text.printText(" ");
-						text.print(inv[i].getName(), inv[i].getColor());
-						text.print(" [" + Integer.toString(player.getItemCountInInventorySlot(i)) + "]");
+						Text.printLine(" ");
+						Text.print(inv[i].getName(), inv[i].getColor());
+						Text.print(" [" + Integer.toString(Player.getItemCountInInventorySlot(i)) + "]");
 					}
 				}
-				text.printText("Type an item name for more options.");
+				Text.printLine("Type an item name for more options.");
 			}
 			
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 	}
 	
 	//Inventory selected item menu
 	private void inventorySub(Item item){
 		
-		text.printTextAddLine("Do what with ");
-		text.print(item.getDisplayName() + "?", item.getColor());
-		text.printText(new String[]{"Use", "Equip", "Stats", "Drop"});
+		Text.printLineExtra("Do what with ");
+		Text.print(item.getDisplayName() + "?", item.getColor());
+		Text.printLine(new String[]{"Use", "Equip", "Stats", "Drop"});
 		
-		int stringChosen = text.testInput(new String[]{"use", "u", "equip", "eq", "e", "stats", "st", "s", "drop", "d", "back", "b"});
+		int stringChosen = Text.testInput(new String[]{"use", "u", "equip", "eq", "e", "stats", "st", "s", "drop", "d", "back", "b"});
 		
 		boolean displayText = true;
 		
@@ -620,14 +651,14 @@ public class CommandHandler{
 			case 0: case 1:
 				
 				if(displayText){
-					text.printTextAddLine("Do what with ");
-					text.print(item.getDisplayName() + "?", item.getColor());
-					text.printText(new String[]{"Use", "Equip", "Stats", "Drop"});
+					Text.printLineExtra("Do what with ");
+					Text.print(item.getDisplayName() + "?", item.getColor());
+					Text.printLine(new String[]{"Use", "Equip", "Stats", "Drop"});
 				}
 				
 				if(item.canUse()){
-					if(player.hasStatusEffect(6)){
-						text.printText("You are under the influence of a lock effect.");
+					if(Player.hasStatusEffect(6)){
+						Text.printLine("You are under the influence of a lock effect.");
 						displayText = true;
 						break;
 					}
@@ -636,7 +667,7 @@ public class CommandHandler{
 					return;
 				}
 				else{
-					text.printText("That item cannot be used.");
+					Text.printLine("That item cannot be used.");
 					displayText = true;
 					break;
 				}
@@ -644,27 +675,27 @@ public class CommandHandler{
 			case 2: case 3: case 4:
 				
 				if(item.getType() >= 0 && item.getType() <= 2){
-					if(item.getClassType() == player.getClassType() || item.getClassType() == 3){
+					if(item.getClassType() == Player.getClassType() || item.getClassType() == 3){
 						
-						player.switchItemsInInventory(player.getInventory()[item.getType()], item);
-						sound.playSound(item.getSound());
+						Player.switchItemsInInventory(Player.getInventory()[item.getType()], item);
+						Sound.playSound(item.getSound());
 						
-						text.printText("You equipped your ");
-						text.print(item.getName(), item.getColor());
-						text.print(".");
+						Text.printLine("You equipped your ");
+						Text.print(item.getName(), item.getColor());
+						Text.print(".");
 						updatePlayer(true);
 						
 						incrementUpdateTick = true;
 						return;
 					}
 					else{
-						text.printText("That item is not for your class.");
+						Text.printLine("That item is not for your class.");
 						displayText = true;
 						break;
 					}
 				}
 				else{
-					text.printText("That item cannot be equipped.");
+					Text.printLine("That item cannot be equipped.");
 					displayText = true;
 					break;
 				}
@@ -676,7 +707,7 @@ public class CommandHandler{
 					return;
 				}
 				else{
-					text.printText("That item has no stats.");
+					Text.printLine("That item has no stats.");
 					displayText = true;
 					break;
 				}
@@ -689,37 +720,37 @@ public class CommandHandler{
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				displayText = false;
 				break;
 			}
 			
 			if(displayText){
-				text.printTextAddLine("Do what with ");
-				text.print(item.getDisplayName() + "?", item.getColor());
-				text.printText(new String[]{"Use", "Equip", "Stats", "Drop"});
+				Text.printLineExtra("Do what with ");
+				Text.print(item.getDisplayName() + "?", item.getColor());
+				Text.printLine(new String[]{"Use", "Equip", "Stats", "Drop"});
 			}
 			
-			stringChosen = text.testInput(new String[]{"use", "u", "equip", "eq", "e", "stats", "st", "s", "drop", "d", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"use", "u", "equip", "eq", "e", "stats", "st", "s", "drop", "d", "back", "b"});
 		}
 	}
 	
 	//Drops selected item
 	private void removeItemChoice(){
 		
-		text.printTextAddLine("Drop which item?");
+		Text.printLineExtra("Drop which item?");
 		
 		
-		Item[] inv = player.getInventory();
+		Item[] inv = Player.getInventory();
 		String[] itemNames = new String[inv.length + 2];
 		
 		for(int i = 0; i < inv.length; i++){
 			
 			for(int j = 3; j < inv.length; j++){
 				if(!inv[j].getName().equals(emptyItem.getName())){
-					text.printText(" ");
-					text.print(inv[j].getName(), inv[j].getColor());
-					text.print(" [" + Integer.toString(player.getItemCountInInventorySlot(j)) + "]");
+					Text.printLine(" ");
+					Text.print(inv[j].getName(), inv[j].getColor());
+					Text.print(" [" + Integer.toString(Player.getItemCountInInventorySlot(j)) + "]");
 				}
 			}
 			
@@ -729,129 +760,129 @@ public class CommandHandler{
 		itemNames[itemNames.length - 1] = "b";
 		itemNames[itemNames.length - 2] = "back";
 		
-		int itemNum = text.testInput(itemNames);
+		int itemNum = Text.testInput(itemNames);
 		
 		while(true){
 			if(itemNum >= itemNames.length - 2){
-				text.printText("Item drop cancelled.");
+				Text.printLine("Item drop cancelled.");
 				return;
 			}
 			else if(itemNum > -1 && itemNum < itemNames.length - 2){
 				removeItem(inv[itemNum], 1);
-				sound.playSound(inv[itemNum].getSound().replace("items/", "items/drop/"));
+				Sound.playSound(inv[itemNum].getSound().replace("items/", "items/drop/"));
 				return;
 			}
 			else{
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 			}
 			
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 	}
 	
 	//Drops item(s) in parameters
 	private void removeItem(Item item, int count){
-		if(player.getInventoryItemCount(item, false) > 1){
+		if(Player.getInventoryItemCount(item, false) > 1){
 			
 			boolean displayText = true;
 			
 			while(true){
 				if(displayText){
-					text.printTextAddLine("How many do you want to drop?");
+					Text.printLineExtra("How many do you want to drop?");
 					displayText = false;
 				}
 				
-				String stringChosen = text.testInput();
+				String stringChosen = Text.testInput();
 				
 				try{
 					count = Integer.parseInt(stringChosen);
 				}
 				catch(Exception e){
-					text.printText("Input is not a number or is in text form. Please try again.");
+					Text.printLine("Input is not a number or is in Text form. Please try again.");
 					displayText = false;
 				}
 				
-				if(count > player.getInventoryItemCount(item, false) || count < 1){
-					text.printText("You cannot drop that many.");
+				if(count > Player.getInventoryItemCount(item, false) || count < 1){
+					Text.printLine("You cannot drop that many.");
 					displayText = true;
 				}
 				else{
-					text.printTextAddLine("Are you sure you want to drop " + Integer.toString(count) + " ");
-					text.print(item.getName(), item.getColor());
-					text.print("s?");
-					text.printYN();
-					text.printText("Once dropped, you cannot retrieve them.");
+					Text.printLineExtra("Are you sure you want to drop " + Integer.toString(count) + " ");
+					Text.print(item.getName(), item.getColor());
+					Text.print("s?");
+					Text.printYN();
+					Text.printLine("Once dropped, you cannot retrieve them.");
 					break;
 				}
 			}
 		}
 		else{
-			text.printTextAddLine("Are you sure you want to drop your ");
-			text.print(item.getName(), item.getColor());
-			text.print("?");
-			text.printYN();
-			text.printText("Once dropped, you cannot retrieve it.");
+			Text.printLineExtra("Are you sure you want to drop your ");
+			Text.print(item.getName(), item.getColor());
+			Text.print("?");
+			Text.printYN();
+			Text.printLine("Once dropped, you cannot retrieve it.");
 			count = 1;
 		}
 		
-		int stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+		int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		
 		while(true){
 			switch(stringChosen){
 			case 0: case 1:
 				if(count == 1){
-					text.printText("Item dropped.");
+					Text.printLine("Item dropped.");
 				}
 				else{
-					text.printText("Items dropped.");
+					Text.printLine("Items dropped.");
 				}
 				
 				for(int i = 0; i < count; i++){
-					player.removeItemFromInventory(item);
+					Player.removeItemFromInventory(item);
 				}
 				
-				sound.playSound(item.getSound().replace("items/", "items/drop/"));
+				Sound.playSound(item.getSound().replace("items/", "items/drop/"));
 				return;
 			
 			case 2: case 3:
 				if(count == 1){
-					text.printText("Item not dropped.");
+					Text.printLine("Item not dropped.");
 				}
 				else{
-					text.printText("Items not dropped.");
+					Text.printLine("Items not dropped.");
 				}
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+			stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		}
 	}
 	
 	//Use item menu
 	private boolean useItem(String input){
 		
-		if(player.hasStatusEffect(6)){
-			text.printText("You are under the influence of a lock effect.");
+		if(Player.hasStatusEffect(6)){
+			Text.printLine("You are under the influence of a lock effect.");
 			return false;
 		}
 		
 		if(input.equals("")){
-			text.printTextAddLine("Use which item?");
+			Text.printLineExtra("Use which item?");
 		}
 		
-		Item[] items = player.getUsableItemsInInventory();
+		Item[] items = Player.getUsableItemsInInventory();
 		String[] itemNames = new String[items.length + 2];
 		
 		for(int i = 0; i < items.length; i++){
 			
 			if(input.equals("")){
-				text.printText(" ");
-				text.print(items[i].getName(), items[i].getColor());
-				text.print(" [" + Integer.toString(player.getUsableItemCountInInventory()[i]) + "]");
+				Text.printLine(" ");
+				Text.print(items[i].getName(), items[i].getColor());
+				Text.print(" [" + Integer.toString(Player.getUsableItemCountInInventory()[i]) + "]");
 			}
 			
 			itemNames[i] = items[i].getName();
@@ -862,20 +893,20 @@ public class CommandHandler{
 		int itemNum = -1;
 		
 		if(input.equals("")){
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 		else{
-			itemNum = text.testInput(input, itemNames);
+			itemNum = Text.testInput(input, itemNames);
 			
 			if(itemNum == -1){
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					return false;
 			}
 		}
 		
 		while(true){
 			if(itemNum >= itemNames.length - 2){
-				text.printText("Item use cancelled.");
+				Text.printLine("Item use cancelled.");
 				return false;
 			}
 			else if(itemNum > -1 && itemNum < itemNames.length - 2){
@@ -885,10 +916,10 @@ public class CommandHandler{
 				return tmp;
 			}
 			else{
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 			}
 			
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 	}
 	
@@ -896,39 +927,43 @@ public class CommandHandler{
 	private boolean useItem(Item item){
 		
 		if(!item.canUse()){
-			text.printText("That item cannot be used.");
+			Text.printLine("That item cannot be used.");
 			return false;
 		}
 		
-		if(item.getType() == 4){
-			int itemNum = text.testInput(item.getName(), new String[]{list.getMiscItemList()[0].getName()});
+		if(item.getType() == 4){	// Misc Items
+			int itemNum = Text.testInput(item.getName(), new String[]{ObjectList.getMiscItemList()[0].getName()});
 			
 			switch(itemNum){
-			case 0:
-				if(areaHandler.isAreaAccessible(list.getAreaList()[4])){
-					text.printTextAddLine("You have already unlocked ");
-					text.print(list.getAreaList()[4].getName(), list.getAreaList()[4].getColor());
-					text.print(".");
+			case 0: // Nightmare Castle Key
+				if(AreaHandler.isAreaAccessible(ObjectList.getAreaList()[4])){
+					Text.printLineExtra("You have already unlocked ");
+					Text.print(ObjectList.getAreaList()[4].getName(), ObjectList.getAreaList()[4].getColor());
+					Text.print(".");
 					return false;
 				}
 				else{
-					
-					int count = player.getItemCountInInventory(list.getMiscItemList()[0]);
+					int count = Player.getItemCountInInventory(ObjectList.getMiscItemList()[0]);
 					
 					if(count < 5){
-						text.printTextAddLine(new String[]{"You don't have enough keys to unlock the castle.", "You need " + Integer.toString(5 - count) + " more."});
+						Text.printLineExtra(new String[]{"You don't have enough keys to unlock the castle.", "You need " + Integer.toString(5 - count) + " more."});
 						return false;
+					}
+					else if(AreaHandler.getArea() != ObjectList.getAreaList()[3]){
+						Text.printLine("You must be in ");
+						Text.print(ObjectList.getAreaList()[3].getName(), ObjectList.getAreaList()[3].getColor());
+						Text.print(" to use the keys.");
 					}
 					else{
 						for(int i = 0; i < 5; i++){
-							player.removeItemFromInventory(list.getMiscItemList()[0]);
+							Player.removeItemFromInventory(ObjectList.getMiscItemList()[0]);
 						}
 						
-						areaHandler.addAccessibleArea(list.getAreaList()[4]);
+						AreaHandler.addAccessibleArea(ObjectList.getAreaList()[4]);
 						
-						text.printTextAddLine("You can now access ");
-						text.print(list.getAreaList()[4].getName(), list.getAreaList()[4].getColor());
-						text.print("!");
+						Text.printLineExtra("You can now access ");
+						Text.print(ObjectList.getAreaList()[4].getName(), ObjectList.getAreaList()[4].getColor());
+						Text.print("!");
 						
 						return true;
 					}
@@ -939,88 +974,88 @@ public class CommandHandler{
 		}
 		
 		if(!item.hasStatusEffects()){
-			if(item.getConsumableStats()[0] > 0 && player.getHealth() == player.getMaxHealth()){
-				if(item.getConsumableStats()[1] > 0 && player.getMagic() == player.getMaxMagic()){
-					text.printTextAddLine("You did not use ");
-					text.print(item.getDisplayName(), item.getColor());
-					text.print(" because you already have full ");
-					text.print("health", Color.RED);
-					text.print(" and ");
-					text.print("magic", Color.BLUE);
-					text.print(".");
+			if(item.getConsumableStats()[0] > 0 && Player.getHealth() == Player.getMaxHealth()){
+				if(item.getConsumableStats()[1] > 0 && Player.getMagic() == Player.getMaxMagic()){
+					Text.printLineExtra("You did not use ");
+					Text.print(item.getDisplayName(), item.getColor());
+					Text.print(" because you already have full ");
+					Text.print("health", Color.RED);
+					Text.print(" and ");
+					Text.print("magic", Color.BLUE);
+					Text.print(".");
 					
 					return false;
 				}
-				text.printTextAddLine("You did not use ");
-				text.print(item.getDisplayName(), item.getColor());
-				text.print(" because you already have full ");
-				text.print("health", Color.RED);
-				text.print(".");
+				Text.printLineExtra("You did not use ");
+				Text.print(item.getDisplayName(), item.getColor());
+				Text.print(" because you already have full ");
+				Text.print("health", Color.RED);
+				Text.print(".");
 				
 				return false;
 			}
-			else if(item.getConsumableStats()[1] > 0 && player.getMagic() == player.getMaxMagic()){
-				text.printTextAddLine("You did not use ");
-				text.print(item.getDisplayName(), item.getColor());
-				text.print(" because you already have full ");
-				text.print("magic", Color.BLUE);
-				text.print(".");
+			else if(item.getConsumableStats()[1] > 0 && Player.getMagic() == Player.getMaxMagic()){
+				Text.printLineExtra("You did not use ");
+				Text.print(item.getDisplayName(), item.getColor());
+				Text.print(" because you already have full ");
+				Text.print("magic", Color.BLUE);
+				Text.print(".");
 				
 				return false;
 			}
 		}
 		
-		if(item.getClassType() == player.getClassType() || item.getClassType() == 3){
-
-			player.removeItemFromInventory(item);
-			sound.playSound(item.getUseSound());
+		if(item.getClassType() == Player.getClassType() || item.getClassType() == 3){
 			
-			text.printTextAddLine("You used ");
-			text.print(item.getDisplayName(), item.getColor());
-			text.print(".");
+			Player.removeItemFromInventory(item);
+			Sound.playSound(item.getUseSound());
+			
+			Text.printLineExtra("You used ");
+			Text.print(item.getDisplayName(), item.getColor());
+			Text.print(".");
 			incrementUpdateTick = true;
 			
-			String healthRestored = Integer.toString(Math.min(item.getConsumableStats()[0], player.getMaxHealth() - player.getHealth()));
-			String magicRestored = Integer.toString(Math.min(item.getConsumableStats()[1], player.getMaxMagic() - player.getMagic()));
+			String healthRestored = Integer.toString(Math.min(item.getConsumableStats()[0], Player.getMaxHealth() - Player.getHealth()));
+			String magicRestored = Integer.toString(Math.min(item.getConsumableStats()[1], Player.getMaxMagic() - Player.getMagic()));
 			
 			if(item.getConsumableStats()[0] > 0){
 				if(item.getConsumableStats()[1] > 0){
 					
-					player.setHealth(player.getHealth() + item.getConsumableStats()[0]);
-					player.setMagic(player.getMagic() + item.getConsumableStats()[1]);
+					Player.setHealth(Player.getHealth() + item.getConsumableStats()[0]);
+					Player.setMagic(Player.getMagic() + item.getConsumableStats()[1]);
 					
-					text.printText("It healed ");
-					text.print(healthRestored + " health ", Color.RED);
-					text.print("and ");
-					text.print(magicRestored + " magic", Color.BLUE);
-					text.print(".");
-					text.print("You now have ");
-					text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health ", Color.RED);
-					text.print("and ");
-					text.print(Integer.toString(player.getMagic()) + "/" + Integer.toString(player.getMaxMagic()) + " magic", Color.BLUE);
-					text.print(".");
+					Text.printLine("It healed ");
+					Text.print(healthRestored + " health ", Color.RED);
+					Text.print("and ");
+					Text.print(magicRestored + " magic", Color.BLUE);
+					Text.print(".");
+					Text.print("You now have ");
+					Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health ", Color.RED);
+					Text.print("and ");
+					Text.print(Integer.toString(Player.getMagic()) + "/" + Integer.toString(Player.getMaxMagic()) + " magic", Color.BLUE);
+					Text.print(".");
 				}
 				else{
-					player.setHealth(player.getHealth() + item.getConsumableStats()[0]);
+					Player.setHealth(Player.getHealth() + item.getConsumableStats()[0]);
 					
-					text.printText("It healed ");
-					text.print(healthRestored + " health", Color.RED);
-					text.print(".");
-					text.print("You now have ");
-					text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health", Color.RED);
-					text.print(".");
+					Text.printLine("It healed ");
+					Text.print(healthRestored + " health", Color.RED);
+					Text.print(".");
+					Text.print("You now have ");
+					Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+					Text.print(".");
 				}
 			}
 			else if(item.getConsumableStats()[1] > 0){
 				
-				player.setMagic(player.getMagic() + item.getConsumableStats()[1]);
+				Player.setMagic(Player.getMagic() + item.getConsumableStats()[1]);
 
-				text.printText("It healed ");
-				text.print(magicRestored + " magic", Color.BLUE);
-				text.print(".");
-				text.print("You now have ");
-				text.print(Integer.toString(player.getMagic()) + "/" + Integer.toString(player.getMaxMagic()) + " magic", Color.BLUE);
-				text.print(".");
+				Text.printLine("It healed ");
+				Text.print(magicRestored + " magic", Color.BLUE);
+				Text.print(".");
+				Text.print("You now have ");
+				Text.print(Integer.toString(Player.getMagic()) + "/" + Integer.toString(Player.getMaxMagic()) + " magic", Color.BLUE);
+				Text.print(".");
 			}
 			
 			
@@ -1030,13 +1065,13 @@ public class CommandHandler{
 				
 				for(int i = 0; i < effects.length; i++){
 					if(effects[i].getType() != emptyEffect.getType()){
-						player.addStatusEffect(effects[i]);
+						Player.addStatusEffect(effects[i]);
 						
-						text.printText("The ");
-						text.print(item.getName(), item.getColor());
-						text.print(" gave you a ");
-						text.print(effects[i].getName(), effects[i].isDebuff() ? Color.RED : DARK_GREEN);
-						text.print(" effect!");
+						Text.printLine("The ");
+						Text.print(item.getName(), item.getColor());
+						Text.print(" gave you a ");
+						Text.print(effects[i].getName(), effects[i].isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+						Text.print(" effect!");
 					}
 				}
 			}
@@ -1045,67 +1080,67 @@ public class CommandHandler{
 			return true;
 		}
 		else{
-			text.printText("That item is not for your class.");
+			Text.printLine("That item is not for your class.");
 			return false;
 		}
 	}
 	
-	//Give player item
+	//Give Player item
 	private void giveItem(Item item){
 		
-		int stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+		int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		
 		while(true){
 			switch(stringChosen){
 			case 0: case 1:
 				
-				if(player.getOpenInventorySlots(item) == 0){
-					text.printText(new String[]{"You do not have enough room.", "Do you want to drop an item?"});
+				if(Player.getOpenInventorySlots(item) == 0){
+					Text.printLine(new String[]{"You do not have enough room.", "Do you want to drop an item?"});
 					
 					while(true){
 						
-						int stringChosen2 = text.testInput(new String[]{"yes", "y", "no", "n"});
+						int stringChosen2 = Text.testInput(new String[]{"yes", "y", "no", "n"});
 						
 						switch(stringChosen2){
 						case 0: case 1:
 							
-							if(player.getOpenInventorySlots(item) == 0){
+							if(Player.getOpenInventorySlots(item) == 0){
 								removeItemChoice();
 							}
 							return;
 						
 						case 2: case 3:
-							text.printText("Item not picked up.");
+							Text.printLine("Item not picked up.");
 							return;
 						
 						default:
-							text.printText("Input not recognized, please try again");
+							Text.printLine("Input not recognized, please try again");
 							return;
 						}
 					}
 				}
 				
-				if(player.getOpenInventorySlots(item) > 0){
-					text.printText("You picked up the ");
-					text.print(item.getName(), item.getColor());
-					text.print(".");
-					sound.playSound(item.getSound());
-					player.addItemToInventory(item);
+				if(Player.getOpenInventorySlots(item) > 0){
+					Text.printLine("You picked up the ");
+					Text.print(item.getName(), item.getColor());
+					Text.print(".");
+					Sound.playSound(item.getSound());
+					Player.addItemToInventory(item);
 					return;
 				}
 				
 				return;
 			
 			case 2: case 3:
-				text.printText("Item not picked up.");
+				Text.printLine("Item not picked up.");
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+			stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		}
 	}
 	
@@ -1113,13 +1148,19 @@ public class CommandHandler{
 	private void equipItem(String input){
 		
 		if(input.equals("")){
-			text.printTextAddLine(new String[]{"View your currently equipped items or equip new ones?"});
+			Text.printLineExtra(new String[]{"View your currently equipped items or equip new ones?"});
 		}
+		
+		String[] localAcceptedInput = {"view currently equipped", "currently equipped", "view current equips", "current equips", "view current", "view equipped", "view equips", "current", "c",
+			"view", "v", "equip new ones", "equip new", "equip", "new", "e", "n", "back", "b"};
 		
 		int stringChosen = -1;
 		
 		if(input.equals("")){
-			stringChosen = text.testInput(new String[]{"view currently equipped", "currently equipped", "view current equips", "current equips", "view current", "view equipped", "view equips", "current", "c", "view", "v", "equip new ones", "equip new", "equip", "new", "e", "n", "back", "b"});
+			stringChosen = Text.testInput(localAcceptedInput);
+		}
+		else if(input.equals("view")){
+			stringChosen = 0;
 		}
 		else{
 			stringChosen = 11;
@@ -1136,34 +1177,34 @@ public class CommandHandler{
 				return;
 			
 			case 17: case 18:
-				text.printText("Equip cancelled.");
+				Text.printLine("Equip cancelled.");
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"view currently equipped", "currently equipped", "view current equips", "current equips", "view current", "view equipped", "view equips", "current", "c", "view", "v", "equip new ones", "equip new", "equip", "new", "e", "n", "back", "b"});
+			stringChosen = Text.testInput(localAcceptedInput);
 		}
 	}
 	
 	//Equip Examine menu
 	private void equipItemExamine(){
 		
-		Item[] inv = player.getInventory();
+		Item[] inv = Player.getInventory();
 		
 		boolean displayText = true;
 		
-		text.printTextAddLine("Your currently equipped items are:");
-		text.printText(inv[0].getName(), inv[0].getColor());
-		text.printText(inv[1].getName(), inv[1].getColor());
-		text.printText(inv[2].getName(), inv[2].getColor());
-		text.printText("Type the item name for details.");
+		Text.printLineExtra("Your currently equipped items are:");
+		Text.printLine(inv[0].getName(), inv[0].getColor());
+		Text.printLine(inv[1].getName(), inv[1].getColor());
+		Text.printLine(inv[2].getName(), inv[2].getColor());
+		Text.printLine("Type the item name for details.");
 		
 		String[] input = new String[]{inv[0].getName(), inv[1].getName(), inv[2].getName(), "back", "b"};
 		
-		int stringChosen = text.testInput(input);
+		int stringChosen = Text.testInput(input);
 		
 		while(true){
 			switch(stringChosen){
@@ -1186,20 +1227,20 @@ public class CommandHandler{
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				displayText = false;
 				break;
 			}
 
 			if(displayText){
-				text.printTextAddLine("Your currently equipped items are:");
-				text.printText(inv[0].getName(), inv[0].getColor());
-				text.printText(inv[1].getName(), inv[1].getColor());
-				text.printText(inv[2].getName(), inv[2].getColor());
-				text.printText("Type the item name for details.");
+				Text.printLineExtra("Your currently equipped items are:");
+				Text.printLine(inv[0].getName(), inv[0].getColor());
+				Text.printLine(inv[1].getName(), inv[1].getColor());
+				Text.printLine(inv[2].getName(), inv[2].getColor());
+				Text.printLine("Type the item name for details.");
 			}
 			
-			stringChosen = text.testInput(input);
+			stringChosen = Text.testInput(input);
 		}
 	}
 	
@@ -1207,17 +1248,17 @@ public class CommandHandler{
 	private void equipItemSub(String input){
 		
 		if(input.equals("")){
-			text.printTextAddLine("Equip which item?");
+			Text.printLineExtra("Equip which item?");
 		}
 		
-		Item[] items = player.getEquipableItemsInInventory();
+		Item[] items = Player.getEquipableItemsInInventory();
 		String[] itemNames = new String[items.length + 2];
 		
 		for(int i = 0; i < items.length; i++){
 			
 			if(input.equals("")){
-				text.addLine();
-				text.print(items[i].getName(), items[i].getColor());
+				Text.addLine();
+				Text.print(items[i].getName(), items[i].getColor());
 			}
 			
 			itemNames[i] = items[i].getName();
@@ -1229,49 +1270,47 @@ public class CommandHandler{
 		int itemNum = -1;
 		
 		if(input.equals("")){
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 		else{
-			itemNum = text.testInput(input, itemNames);
+			itemNum = Text.testInput(input, itemNames);
 			
 			if(itemNum == -1){
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					return;
 			}
 		}
 		
 		while(true){
 			if(itemNum >= itemNames.length - 2){
-				text.printText("Equip cancelled.");
+				Text.printLine("Equip cancelled.");
 				return;
 			}
 			else if(itemNum > -1 && itemNum < itemNames.length - 2){
-				if(items[itemNum].getClassType() == player.getClassType() || items[itemNum].getClassType() == 3){
+				if(items[itemNum].getClassType() == Player.getClassType() || items[itemNum].getClassType() == 3){
 					incrementUpdateTick = true;
 					Item item = items[itemNum];
 					
-					player.switchItemsInInventory(player.getInventory()[item.getType()], item);
-					sound.playSound(item.getSound());
+					Player.switchItemsInInventory(Player.getInventory()[item.getType()], item);
+					Sound.playSound(item.getSound());
 					
-					text.printText("You equipped your ");
-					text.print(item.getName(), item.getColor());
-					text.print(".");
+					Text.printLine("You equipped your ");
+					Text.print(item.getName(), item.getColor());
+					Text.print(".");
 					updatePlayer(true);
 					
-					if(!input.equals("")){
-						return;
-					}
+					return;
 				}
 				else{
-					text.printText("That item is not for your class.");
+					Text.printLine("That item is not for your class.");
 					return;
 				}
 			}
 			else{
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 			}
 			
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 	}
 	
@@ -1280,15 +1319,15 @@ public class CommandHandler{
 		
 		if(item.getType() == 0 || item.getType() == 1){
 
-			text.printTextAddLine("Your ");
-			text.print(item.getName(), item.getColor());
-			text.print(" has the attack");
+			Text.printLineExtra("Your ");
+			Text.print(item.getName(), item.getColor());
+			Text.print(" has the attack");
 			
 			if(item.getWeaponAttacks().length > 1){
-				text.print("s");
+				Text.print("s");
 			}
 			
-			text.print(":");
+			Text.print(":");
 			
 			for(int i = 0; i < item.getWeaponAttacks().length; i++){
 				
@@ -1301,56 +1340,56 @@ public class CommandHandler{
 				}
 				
 				if(item.getType() == 0){
-					text.addLine();
+					Text.addLine();
 					
-					text.printText(attack.getAttackName(), attack.getColor());
-					text.print(", which does ");
-					text.print((attack.getMinimumDamage() == attack.getMaximumDamage() ? Integer.toString(attack.getMinimumDamage()) :
+					Text.printLine(attack.getAttackName(), attack.getColor());
+					Text.print(", which does ");
+					Text.print((attack.getMinimumDamage() == attack.getMaximumDamage() ? Integer.toString(attack.getMinimumDamage()) :
 					Integer.toString(attack.getMinimumDamage()) + "-" +
 					Integer.toString(attack.getMaximumDamage())) + " damage ", Color.RED);
-					text.print("with a hit chance of ");
-					text.print(Integer.toString(attack.getHitRate()) + "%", GOLD);
-					text.print(end);
+					Text.print("with a hit chance of ");
+					Text.print(Integer.toString(attack.getHitRate()) + "%", COLOR_GOLD);
+					Text.print(end);
 				}
 				else{
-					text.addLine();
+					Text.addLine();
 
-					text.printText(attack.getAttackName(), attack.getColor());
-					text.print(", which costs ");
-					text.print(Integer.toString(attack.getUserBasedInt()) + " magic", Color.BLUE);
-					text.print(", and does ");
-					text.print((attack.getMinimumDamage() == attack.getMaximumDamage() ? Integer.toString(attack.getMinimumDamage()) :
+					Text.printLine(attack.getAttackName(), attack.getColor());
+					Text.print(", which costs ");
+					Text.print(Integer.toString(attack.getUserBasedInt()) + " magic", Color.BLUE);
+					Text.print(", and does ");
+					Text.print((attack.getMinimumDamage() == attack.getMaximumDamage() ? Integer.toString(attack.getMinimumDamage()) :
 					Integer.toString(attack.getMinimumDamage()) + "-" +
 					Integer.toString(attack.getMaximumDamage())) + " damage ", Color.RED);
-					text.print("with a hit chance of ");
-					text.print(Integer.toString(attack.getHitRate()) + "%", GOLD);
-					text.print(end);
+					Text.print("with a hit chance of ");
+					Text.print(Integer.toString(attack.getHitRate()) + "%", COLOR_GOLD);
+					Text.print(end);
 				}
 				
 				if(attack.hasStatusEffects()){
 					
-					text.printText("and has the effect");
+					Text.printLine("and has the effect");
 					
 					if(attack.getStatusEffects().length > 1){
-						text.print("s");
+						Text.print("s");
 					}
 					
-					text.print(":");
+					Text.print(":");
 					
 					for(int j = 0; j < attack.getStatusEffects().length; j++){
 						
 						StatusEffect effect = attack.getStatusEffects()[j];
 						String effectName = effect.getName();
 						
-						text.printText("Level " + Integer.toString(effect.getLevel()) + " ", GOLD);
-						text.print(effectName, effect.isDebuff() ? Color.RED : DARK_GREEN);
-						text.print(" on ");
-						text.print((effect.isTargetingPlayer() ?  " yourself" : " the enemy"),
-						(effect.isDebuff()^effect.isTargetingPlayer()) ? DARK_GREEN : Color.RED);
-						text.print(", lasting " + Integer.toString(effect.getLength()) + " action" + 
+						Text.printLine("Level " + Integer.toString(effect.getLevel()) + " ", COLOR_GOLD);
+						Text.print(effectName, effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+						Text.print(" on ");
+						Text.print((effect.isTargetingPlayer() ?  " yourself" : " the enemy"),
+						(effect.isDebuff()^effect.isTargetingPlayer()) ? COLOR_DARK_GREEN : Color.RED);
+						Text.print(", lasting " + Integer.toString(effect.getLength()) + " action" + 
 						(effect.getLength() == 1 ? "" : "s") +" at a ");
-						text.print(Integer.toString(effect.getChance()) + "% chance", GOLD);
-						text.print(".");
+						Text.print(Integer.toString(effect.getChance()) + "% chance", COLOR_GOLD);
+						Text.print(".");
 					}
 				}
 			}
@@ -1369,68 +1408,68 @@ public class CommandHandler{
 				
 				if(item.getArmorStats()[1] > 0){
 					if(item.getArmorStats()[2] > 0){
-						text.printTextAddLine("Your ");
-						text.print(name, color);
-						text.print(" gives you ");
-						text.print(def + " defense", Color.DARK_GRAY);
-						text.print(", ");
-						text.print(hp + " health", Color.RED);
-						text.print(", and ");
-						text.print(mp + " magic", Color.BLUE);
-						text.print(".");
+						Text.printLineExtra("Your ");
+						Text.print(name, color);
+						Text.print(" gives you ");
+						Text.print(def + " defense", Color.DARK_GRAY);
+						Text.print(", ");
+						Text.print(hp + " health", Color.RED);
+						Text.print(", and ");
+						Text.print(mp + " magic", Color.BLUE);
+						Text.print(".");
 					}
 					else{
-						text.printTextAddLine("Your ");
-						text.print(name, color);
-						text.print(" gives you ");
-						text.print(def + " defense", Color.DARK_GRAY);
-						text.print(" and ");
-						text.print(hp + " health", Color.RED);
-						text.print(".");
+						Text.printLineExtra("Your ");
+						Text.print(name, color);
+						Text.print(" gives you ");
+						Text.print(def + " defense", Color.DARK_GRAY);
+						Text.print(" and ");
+						Text.print(hp + " health", Color.RED);
+						Text.print(".");
 					}
 				}
 				else if(item.getArmorStats()[2] > 0){
-					text.printTextAddLine("Your ");
-					text.print(name, color);
-					text.print(" gives you ");
-					text.print(def + " defense", Color.DARK_GRAY);
-					text.print(" and ");
-					text.print(mp + " magic", Color.BLUE);
-					text.print(".");
+					Text.printLineExtra("Your ");
+					Text.print(name, color);
+					Text.print(" gives you ");
+					Text.print(def + " defense", Color.DARK_GRAY);
+					Text.print(" and ");
+					Text.print(mp + " magic", Color.BLUE);
+					Text.print(".");
 				}
 				else{
-					text.printTextAddLine("Your ");
-					text.print(name, color);
-					text.print(" gives you ");
-					text.print(def + " defense", Color.DARK_GRAY);
-					text.print(".");
+					Text.printLineExtra("Your ");
+					Text.print(name, color);
+					Text.print(" gives you ");
+					Text.print(def + " defense", Color.DARK_GRAY);
+					Text.print(".");
 				}
 			}
 			else if(item.getArmorStats()[1] > 0){
 				
 				if(item.getArmorStats()[2] > 0){
-					text.printTextAddLine("Your ");
-					text.print(name, color);
-					text.print(" gives you ");
-					text.print(hp + " health", Color.RED);
-					text.print(" and ");
-					text.print(mp + " magic", Color.BLUE);
-					text.print(".");
+					Text.printLineExtra("Your ");
+					Text.print(name, color);
+					Text.print(" gives you ");
+					Text.print(hp + " health", Color.RED);
+					Text.print(" and ");
+					Text.print(mp + " magic", Color.BLUE);
+					Text.print(".");
 				}
 				else{
-					text.printTextAddLine("Your ");
-					text.print(name, color);
-					text.print(" gives you ");
-					text.print(hp + " health", Color.RED);
-					text.print(".");
+					Text.printLineExtra("Your ");
+					Text.print(name, color);
+					Text.print(" gives you ");
+					Text.print(hp + " health", Color.RED);
+					Text.print(".");
 				}
 			}
 			else{
-				text.printTextAddLine("Your ");
-				text.print(name, color);
-				text.print(" gives you ");
-				text.print(mp + " magic", Color.BLUE);
-				text.print(".");
+				Text.printLineExtra("Your ");
+				Text.print(name, color);
+				Text.print(" gives you ");
+				Text.print(mp + " magic", Color.BLUE);
+				Text.print(".");
 			}
 		}
 		
@@ -1441,39 +1480,39 @@ public class CommandHandler{
 			
 			if(hp > 0){
 				if(mp > 0){
-					text.printTextAddLine("Your ");
-					text.print(item.getName(), item.getColor());
-					text.print(" restores ");
-					text.print(Integer.toString(hp) + " health", Color.RED);
-					text.print(" and ");
-					text.print(Integer.toString(mp) + " magic", Color.BLUE);
-					text.print(".");
+					Text.printLineExtra("Your ");
+					Text.print(item.getName(), item.getColor());
+					Text.print(" restores ");
+					Text.print(Integer.toString(hp) + " health", Color.RED);
+					Text.print(" and ");
+					Text.print(Integer.toString(mp) + " magic", Color.BLUE);
+					Text.print(".");
 				}
 				else{
-					text.printTextAddLine("Your ");
-					text.print(item.getName(), item.getColor());
-					text.print(" heals ");
-					text.print(Integer.toString(hp) + " health", Color.RED);
-					text.print(".");
+					Text.printLineExtra("Your ");
+					Text.print(item.getName(), item.getColor());
+					Text.print(" heals ");
+					Text.print(Integer.toString(hp) + " health", Color.RED);
+					Text.print(".");
 				}
 			}
 			else{
-				text.printTextAddLine("Your ");
-				text.print(item.getName(), item.getColor());
-				text.print(" restores ");
-				text.print(Integer.toString(mp) + " magic", Color.BLUE);
-				text.print(".");
+				Text.printLineExtra("Your ");
+				Text.print(item.getName(), item.getColor());
+				Text.print(" restores ");
+				Text.print(Integer.toString(mp) + " magic", Color.BLUE);
+				Text.print(".");
 			}
 			
 			if(item.hasStatusEffects()){
 				
 				if(hp > 0 || mp > 0){
-					text.printText("It has the status effects:");
+					Text.printLine("It has the status effects:");
 				}
 				else{
-					text.printTextAddLine("Your ");
-					text.print(item.getName(), item.getColor());
-					text.print(" has the status effects:");
+					Text.printLineExtra("Your ");
+					Text.print(item.getName(), item.getColor());
+					Text.print(" has the status effects:");
 				}
 				
 				for(int i = 0; i < item.getStatusEffectCount(); i++){
@@ -1482,12 +1521,12 @@ public class CommandHandler{
 					
 					String effectName = effect.getName();
 					
-					text.printText("Level " + Integer.toString(effect.getLevel()) + " ");
-					text.print(effectName, (effect.isDebuff()^effect.isTargetingPlayer()) ? Color.RED : DARK_GREEN);
-					text.print(" on ");
-					text.print((effect.isTargetingPlayer() ?  " yourself " : " the enemy "),
-					(effect.isDebuff()^effect.isTargetingPlayer()) ? DARK_GREEN : Color.RED);
-					text.print("with a duration of " + Integer.toString(effect.getLength()) + " actions.");
+					Text.printLine("Level " + Integer.toString(effect.getLevel()) + " ");
+					Text.print(effectName, (effect.isDebuff()^effect.isTargetingPlayer()) ? Color.RED : COLOR_DARK_GREEN);
+					Text.print(" on ");
+					Text.print((effect.isTargetingPlayer() ?  " yourself " : " the enemy "),
+					(effect.isDebuff()^effect.isTargetingPlayer()) ? COLOR_DARK_GREEN : Color.RED);
+					Text.print("with a duration of " + Integer.toString(effect.getLength()) + " actions.");
 				}
 			}
 		}
@@ -1495,19 +1534,19 @@ public class CommandHandler{
 	
 	//Shop main menu
 	private void shop(String input){
-		if(areaHandler.getArea().getShopkeepers().length < 1){
-			text.printText("There are no available shops here.");
+		if(AreaHandler.getArea().getShopkeepers().length < 1){
+			Text.printLine("There are no available shops here.");
 			return;
 		}
 		else{
 
-			Shopkeeper[] shops = areaHandler.getArea().getShopkeepers();
+			Shopkeeper[] shops = AreaHandler.getArea().getShopkeepers();
 			
 			if(input.equals("")){
-				text.printTextAddLine("Choose a shop:");
+				Text.printLineExtra("Choose a shop:");
 				
 				for(int i = 0; i < shops.length; i++){
-					text.printText(shops[i].getName());
+					Text.printLine(shops[i].getName());
 				}
 			}
 			
@@ -1523,20 +1562,20 @@ public class CommandHandler{
 			int shopNum = -1;
 			
 			if(input.equals("")){
-				shopNum = text.testInput(shopNames);
+				shopNum = Text.testInput(shopNames);
 			}
 			else{
-				shopNum = text.testInput(input, shopNames);
+				shopNum = Text.testInput(input, shopNames);
 				
 				if(shopNum == -1){
-						text.printText("Input not recognized, please try again");
+						Text.printLine("Input not recognized, please try again");
 						return;
 				}
 			}
 			
 			while(true){
 				if(shopNum >= shopNames.length - 2){
-					text.printText(new String[]{"Shopping cancelled."});
+					Text.printLine(new String[]{"Shopping cancelled."});
 					return;
 				}
 				else if(shopNum > -1 && shopNum < shopNames.length - 2){
@@ -1549,10 +1588,10 @@ public class CommandHandler{
 					return;
 				}
 				else{
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 				}
 				
-				shopNum = text.testInput(shopNames);
+				shopNum = Text.testInput(shopNames);
 			}
 		}
 	}
@@ -1564,31 +1603,21 @@ public class CommandHandler{
 		int[] itemPrices = shopkeeper.getItemPrices();
 		int[] itemCounts = shopkeeper.getItemCounts();
 		
-		text.addLine();
-		text.printText(shopkeeper.getGreetMessage());
+		Text.addLine();
+		Text.printLine(shopkeeper.getGreetMessage());
 
 		int[] counts = shopkeeper.getItemCounts();
 		int[] prices = shopkeeper.getItemPrices();
 		
-		for(int i = 0; i < items.length; i++){
-			text.printText(items[i].getName(), items[i].getColor());
-			text.print(" " + "[" + Integer.toString(counts[i]) + "] ");
-			text.print(Integer.toString(prices[i]) + " gp", GOLD);
-		}
-		
-		int foundItems = 0;
-
-		for(int i = 0; i < items.length; i++){
-			if(!items[i].getName().equals(emptyItem.getName())){
-				foundItems++;
-			}
-		}
-		
-		String[] itemNames = new String[foundItems + 4];
+		String[] itemNames = new String[items.length + 4];
 		int itemNum = 0;
 		
 		for(int i = 0; i < items.length; i++){
-			if(!items[i].getName().equals(emptyItem.getName())){
+			if(itemCounts[i] > 0){
+				Text.printLine(items[i].getName(), items[i].getColor());
+				Text.print(" " + "[" + Integer.toString(counts[i]) + "] ");
+				Text.print(Integer.toString(prices[i]) + " gp", COLOR_GOLD);
+				
 				itemNames[i] = items[i].getName();
 				itemNum++;
 			}
@@ -1599,44 +1628,53 @@ public class CommandHandler{
 		itemNames[itemNames.length - 3] = "n";
 		itemNames[itemNames.length - 4] = "no";
 		
-		itemNum = text.testInput(itemNames);
+		itemNum = Text.testInput(itemNames);
 		
 		while(true){
 			if(itemNum >= itemNames.length - 4){
-				text.printText(shopkeeper.getEndMessage());
+				Text.printLine(shopkeeper.getEndMessage());
 				return;
 			}
 			else if(itemNum > -1 && itemNum < itemNames.length - 4){
 				if(itemCounts[itemNum] >= 1){
-					if(itemCounts[itemNum] == 1){
+					if(itemCounts[itemNum] == 1)
 						shopItemPurchase(items[itemNum], itemPrices[itemNum], 1, shopkeeper);
-					}
-					else{
+					else
 						shopMultipleItems(items[itemNum], itemPrices[itemNum], itemCounts[itemNum], shopkeeper);
+					
+					Text.printLine("Anything else you want?");
+					
+					for(int i = 0; i < items.length; i++){
+						if(itemCounts[i] > 0){
+							Text.printLine(items[i].getName(), items[i].getColor());
+							Text.print(" " + "[" + Integer.toString(counts[i]) + "] ");
+							Text.print(Integer.toString(prices[i]) + " gp", COLOR_GOLD);
+						}
 					}
+					
 				}
 				else{
-					text.printText("Sorry, we're out of stock on that one.");
+					Text.printLine("Sorry, we're out of stock on that one.");
 				}
 			}
 			else{
-				text.printText("What did you say? I might have misunderstood you.");
+				Text.printLine("What did you say? I might have misunderstood you.");
 			}
 			
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 	}
 	
 	//Shop menu for buying an item
 	private void shopMultipleItems(Item item, int gold, int count, Shopkeeper shopkeeper){
 		
-		text.printTextAddLine("How many do you want?");
+		Text.printLineExtra("How many do you want?");
 		
-		String itemString = text.testInput();
+		String itemString = Text.testInput();
 		int itemCount = -1;
 		
-		if(itemString.equalsIgnoreCase("back") || !itemString.equalsIgnoreCase("b")){
-			text.printText("Anything else you want?");
+		if(itemString.equalsIgnoreCase("back") || itemString.equalsIgnoreCase("b")){
+			Text.printLine("Anything else you want?");
 			return;
 		}
 		
@@ -1645,11 +1683,11 @@ public class CommandHandler{
 				itemCount = Integer.parseInt(itemString);
 			}
 			catch(Exception e){
-				text.printText(new String[]{"That's not a number, or maybe you typed the word instead of the number."});
+				Text.printLine(new String[]{"That's not a number, or maybe you typed the word instead of the number."});
 			}
 			
 			if(itemCount < 1){
-				text.printText("Sorry, I can't give you that much.");
+				Text.printLine("Sorry, I can't give you that much.");
 			}
 		}
 		
@@ -1658,18 +1696,19 @@ public class CommandHandler{
 		}
 		else if(itemCount <= count){
 			shopItemPurchase(item, gold, itemCount, shopkeeper);
+			return;
 		}
 		
-		text.printText("Anything else you want?");
+		Text.printLine("Anything else you want?");
 		return;
 	}
 	
-	//Shop menu if player orders more than are available
+	//Shop menu if Player orders more than are available
 	private void shopMultipleItemsSub(Item item, int gold, int count, Shopkeeper shopkeeper){
 		
-		text.printText("Sorry, we only have " + Integer.toString(count) + " of those. Do you want all of them?");
+		Text.printLine("Sorry, we only have " + Integer.toString(count) + " of those. Do you want all of them?");
 		
-		int stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+		int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		
 		while(true){
 			switch(stringChosen){
@@ -1681,24 +1720,24 @@ public class CommandHandler{
 					return;
 				
 				default:
-					text.printText("What did you say? I may have misunderstood you.");
+					Text.printLine("What did you say? I may have misunderstood you.");
 					break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+			stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		}
 	}
 	
 	//Shop menu for confirming purchase
 	private void shopItemPurchase(Item item, int gold, int count, Shopkeeper shopkeeper){
 		
-		if(player.getOpenInventorySlots(item) < count){
-			text.printText("You don't have enough inventory space.");
+		if(Player.getOpenInventorySlots(item) < count){
+			Text.printLine("You don't have enough inventory space.");
 			return;
 		}
 		
-		if(player.getGold() < (gold*count)){
-			text.printText("You don't have enough gold.");
+		if(Player.getGold() < (gold*count)){
+			Text.printLine("You don't have enough gold.");
 			return;
 		}
 		
@@ -1708,30 +1747,30 @@ public class CommandHandler{
 			plural = "s";
 		}
 		
-		text.printTextAddLine("Do you want to buy " + Integer.toString(count) + " ");
-		text.print(item.getName() + plural, item.getColor());
-		text.printText(" for ");
-		text.print(Integer.toString(gold*count) + " gold", GOLD);
-		text.print("?");
-		text.printYN();
+		Text.printLineExtra("Do you want to buy " + Integer.toString(count) + " ");
+		Text.print(item.getName() + plural, item.getColor());
+		Text.print(" for ");
+		Text.print(Integer.toString(gold*count) + " gold", COLOR_GOLD);
+		Text.print("?");
+		Text.printYN();
 		
-		int stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+		int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		
 		while(true){
 			switch(stringChosen){
 			case 0: case 1:
 				
-				player.setGold(player.getGold() - (gold*count));
+				Player.setGold(Player.getGold() - (gold*count));
 				
 				for(int i = 0; i < count; i++){
-					player.addItemToInventory(item);
+					Player.addItemToInventory(item);
 					shopkeeper.removeItem(item);
 				}
 				
-				text.printText("You bought the ");
-				text.print(item.getName() + plural, item.getColor());
-				text.print(".");
-				sound.playSound("coins01.wav");
+				Text.printLine("You bought the ");
+				Text.print(item.getName() + plural, item.getColor());
+				Text.print(".");
+				Sound.playSound("coins01.wav");
 				
 				return;
 				
@@ -1739,40 +1778,35 @@ public class CommandHandler{
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+			stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		}
 	}
 	
-	//Shop menu for Tradesman (player sells items)
+	//Shop menu for Tradesman (Player sells items)
 	private void shopTrade(Shopkeeper shopkeeper){
 		
-		Item[] inv = player.getInventory();
+		Item[] inv = Player.getInventory();
 		
 		boolean displayText;
 		
-		text.printTextAddLine(shopkeeper.getGreetMessage());
-		
-		for(int i = 3; i < inv.length; i++){
-			if(!inv[i].getName().equals(emptyItem.getName())){
-				text.printText(" ");
-				text.print(inv[i].getName(), inv[i].getColor());
-				text.print(" [" + Integer.toString(player.getItemCountInInventorySlot(i)) + "]");
-			}
-		}
-		
+		Text.printLineExtra(shopkeeper.getGreetMessage());
+
 		int itemNum = 0;
 		
 		for(int i = 3; i < inv.length; i++){
 			if(!inv[i].getName().equals(emptyItem.getName())){
+				Text.printLine(" ");
+				Text.print(inv[i].getName(), inv[i].getColor());
+				Text.print(" [" + Integer.toString(Player.getItemCountInInventorySlot(i)) + "]");
 				itemNum++;
 			}
 		}
 		
-		String[] itemNames = new String[itemNum + 2];
+		String[] itemNames = new String[itemNum + 4];
 		
 		for(int i = 3; i < inv.length; i++){
 			if(!inv[i].getName().equals(emptyItem.getName())){
@@ -1782,40 +1816,44 @@ public class CommandHandler{
 
 		itemNames[itemNames.length - 1] = "b";
 		itemNames[itemNames.length - 2] = "back";
-		itemNum = text.testInput(itemNames);
+		itemNames[itemNames.length - 3] = "n";
+		itemNames[itemNames.length - 4] = "no";
+		
+		itemNum = Text.testInput(itemNames);
 		
 		while(true){
-			if(itemNum >= itemNames.length - 2){
+			if(itemNum >= itemNames.length - 4){
+				Text.printLine("Have a good day.");
 				return;
 			}
 			else if(itemNum > -1 && itemNum < itemNames.length - 2){
 				shopTradeSub(inv[itemNum + 3], 0);
-				text.printText("Anything else you want to sell?");
+				Text.printLine("Anything else you want to sell?");
 				displayText = true;
 			}
 			else{
-				text.printText("I'm sorry, what did you say?");
+				Text.printLine("I'm sorry, what did you say?");
 				displayText = false;
 			}
 			
 			if(displayText){
 				for(int i = 3; i < inv.length; i++){
 					if(!inv[i].getName().equals(emptyItem.getName())){
-						text.printText(" ");
-						text.print(inv[i].getName(), inv[i].getColor());
-						text.print(" [" + Integer.toString(player.getItemCountInInventorySlot(i)) + "]");
+						Text.printLine(" ");
+						Text.print(inv[i].getName(), inv[i].getColor());
+						Text.print(" [" + Integer.toString(Player.getItemCountInInventorySlot(i)) + "]");
 					}
 				}
 			}
 			
-			itemNum = text.testInput(itemNames);
+			itemNum = Text.testInput(itemNames);
 		}
 	}
 	
 	//Shop menu for Tradesman for specific item
 	private void shopTradeSub(Item item, int count){
 		
-		int gold = 20;
+		int gold = 0;
 		
 		double classes = 1;
 		
@@ -1824,36 +1862,32 @@ public class CommandHandler{
 		}
 		
 		switch(item.getType()){
-			case 0: case 1:
-				gold = 0;
+			case 0: case 1: // Weapon
 				
-				for(int i = 0; i < item.getWeaponAttacks().length; i++){
-					double temp1 = item.getWeaponAttacks()[i].getMinimumDamage();
-					double temp2 = item.getWeaponAttacks()[i].getHitRate();
-					double temp3 = temp2/70;
-					double temp4 = temp1*temp3;
-					double temp5 = temp4*classes;
+				for(Attack a:item.getWeaponAttacks()){
+					double temp1 = (a.getMinimumDamage() + a.getMaximumDamage())/2;
+					double temp2 = a.getHitRate()/85;
+					double temp3 = (temp1/2)*temp2;
 					
-					gold += (int) temp5;
+					gold += (int)temp3;
 					
-					if(item.getWeaponAttacks()[i].hasStatusEffects()){
-						for(int j = 0; j < item.getWeaponAttacks()[i].getStatusEffectCount(); j++){
-							double temp6 = item.getWeaponAttacks()[i].getStatusEffects()[j].getLength();
-							double temp7 = item.getWeaponAttacks()[i].getStatusEffects()[j].getLevel();
-							double temp8 = item.getWeaponAttacks()[i].getStatusEffects()[j].getChance();
-							double temp9 = temp6*temp7;
-							double temp10 = temp8/100;
-							double temp11 = temp9*temp10;
-							double temp12 = temp11/4;
+					if(a.hasStatusEffects()){
+						for(StatusEffect e:a.getStatusEffects()){
+							double temp4 = e.getLength();
+							double temp5 = e.getLevel();
+							double temp6 = e.getChance()/100;
+							double temp7 = (temp4*temp5*temp6)/10;
 							
-							if(item.getClassType() == 0 && item.getType() == 1){
-								temp12 *= 5;
+							if(item.getClassType() == 0 && item.getType() == 1){// If item is a shield
+								temp7 *= 5;
 							}
 							
-							gold += (int)temp12;
+							gold += (int)temp7;
 						}
 					}
 				}
+				
+				gold *= classes;
 				
 				if(item.getName().toLowerCase().contains("dragon scroll")){
 					gold *= 100;
@@ -1861,12 +1895,12 @@ public class CommandHandler{
 				
 				break;
 			
-			case 2:
-				gold = (int) ((int) (item.getArmorStats()[0] + item.getArmorStats()[1] + item.getArmorStats()[2])*classes*3);
+			case 2: // Armor
+				gold = (int)((item.getArmorStats()[0] + (item.getArmorStats()[1] + item.getArmorStats()[2])/5)*classes*3);
 				break;
 			
-			case 3:
-				gold = (int) ((int) (item.getConsumableStats()[0] + item.getConsumableStats()[1])*classes);
+			case 3: // Consumable
+				gold = (int)((item.getConsumableStats()[0] + item.getConsumableStats()[1])*(classes/1.5)/4);
 				
 				if(item.hasStatusEffects()){
 					for(int i = 0; i < item.getStatusEffectCount(); i++){
@@ -1890,11 +1924,11 @@ public class CommandHandler{
 				break;
 		}
 		
-		if(player.getInventoryItemCount(item, false) > 1){
+		if(Player.getInventoryItemCount(item, false) > 1){
 			
-			text.printText("How many do you want to sell?");
+			Text.printLine("How many do you want to sell?");
 			
-			String stringChosen = text.testInput();
+			String stringChosen = Text.testInput();
 			count = -1;
 			
 			while(count < 0){
@@ -1902,84 +1936,70 @@ public class CommandHandler{
 					count = Integer.parseInt(stringChosen);
 				}
 				catch(Exception e){
-					text.printText("That isn't a number, or did you type the word instead of the number?");
+					Text.printLine("That isn't a number, or did you type the word instead of the number?");
 				}
 				
 				if(count < 0){
-					text.printText("You can't sell that many.");
+					Text.printLine("You can't sell that many.");
 				}
-				else if(count > player.getInventoryItemCount(item, false)){
-					text.printText("You don't have that many.");
+				else if(count > Player.getInventoryItemCount(item, false)){
+					Text.printLine("You don't have that many.");
 					count = 0;
 				}
 			}
 			
 			if(count == 1){
-				text.printTextAddLine("Are you sure you want to sell 1 ");
-				text.print(item.getName(), item.getColor());
-				text.print(" for ");
-				text.print(Integer.toString(gold) + " gold", GOLD);
-				text.print("?");
-				text.printYN();
-				text.printText("Once sold, you cannot retrieve it.");
+				Text.printLineExtra("Are you sure you want to sell 1 ");
+				Text.print(item.getName(), item.getColor());
 			}
 			else{
-				text.printTextAddLine("Are you sure you want to sell " + Integer.toString(count) + " ");
-				text.print(item.getName() + "s", item.getColor());
-				text.print(" for ");
-				text.print(Integer.toString(gold) + " gold", GOLD);
-				text.print("?");
-				text.printYN();
-				text.printText("Once sold, you cannot retrieve them.");
+				Text.printLineExtra("Are you sure you want to sell " + Integer.toString(count) + " ");
+				Text.print(item.getName() + "s", item.getColor());
 			}
+			
+			Text.print(" for ");
+			Text.print(Integer.toString(gold) + " gold", COLOR_GOLD);
+			Text.print("?");
+			Text.printYN();
+			Text.printLine("Once sold, you cannot retrieve them.");
 		}
 		else{
-			text.printTextAddLine("Are you sure you want to sell your ");
-			text.print(item.getName(), item.getColor());
-			text.print(" for ");
-			text.print(Integer.toString(gold) + " gold", GOLD);
-			text.print("?");
-			text.printYN();
-			text.printText("Once sold, you cannot retrieve it.");
+			Text.printLineExtra("Are you sure you want to sell your ");
+			Text.print(item.getName(), item.getColor());
+			Text.print(" for ");
+			Text.print(Integer.toString(gold) + " gold", COLOR_GOLD);
+			Text.print("?");
+			Text.printYN();
+			Text.printLine("Once sold, you cannot retrieve it.");
 			count = 1;
 		}
 		
-		int stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+		int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		
 		while(true){
 			switch(stringChosen){
 			case 0: case 1:
-				if(count == 1){
-					text.printText("Item sold.");
-				}
-				else{
-					text.printText("Items sold.");
-				}
+				Text.printLine("Item" + (count == 1 ? "" : "s") + " sold.");
 				
 				for(int i = 0; i < count; i++){
-					player.removeItemFromInventory(item);
-					player.setGold(player.getGold() + gold);
+					Player.removeItemFromInventory(item);
+					Player.setGold(Player.getGold() + gold);
 				}
 				
-				sound.playSound("coins01.wav");
+				Sound.playSound("coins01.wav");
 				incrementUpdateTick = true;
 				return;
 			
 			case 2: case 3:
-				if(count == 1){
-					text.printText("Item not sold.");
-				}
-				else{
-					text.printText("Items not sold.");
-				}
+				Text.printLine("Item" + (count == 1 ? "" : "s") + " not sold.");
 				return;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"yes", "y", "no", "n"});
+			stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 		}
 	}
 	
@@ -1987,14 +2007,14 @@ public class CommandHandler{
 	private void interact(String input){
 		
 		if(input.equals("")){
-			text.printTextAddLine("Interact with what?");
+			Text.printLineExtra("Interact with what?");
 		}
 		
 		//All area interactions
-		Interaction[] intrs = areaHandler.getArea().getInteractions();
+		Interaction[] intrs = AreaHandler.getArea().getInteractions();
 		
 		//No. of total intr. names for an intr. in array above plus no. of names for all prior intrs.
-		//Used to determine which interaction the player selects
+		//Used to determine which interaction the Player selects
 		int[] intrNameLengthData = new int[intrs.length];
 		
 		//Total area names
@@ -2024,20 +2044,20 @@ public class CommandHandler{
 		int intrNum = -1;
 		
 		if(input.equals("")){
-			intrNum = text.testInput(intNames);
+			intrNum = Text.testInput(intNames);
 		}
 		else{
-			intrNum = text.testInput(input, intNames);
+			intrNum = Text.testInput(input, intNames);
 			
 			if(intrNum == -1){
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					return;
 			}
 		}
 		
 		while(true){
 			if(intrNum >= intNames.length - 2){//Player types cancel or cn
-				text.printText("Interaction cancelled.");
+				Text.printLine("Interaction cancelled.");
 				return;
 			}
 			else if(intrNum > -1 && intrNum < intNames.length - 2){//Check if input refers to an interaction
@@ -2050,12 +2070,9 @@ public class CommandHandler{
 					}
 				}
 				
-				//Set window in interaction
-				intrs[intrNum].setWindow(window);
-				
 				//Do interaction stuff
-				player = intrs[intrNum].interact(player);
-				sound.playSound(intrs[intrNum].getSound());
+				intrs[intrNum].interact();
+				Sound.playSound(intrs[intrNum].getSound());
 				
 				//Give items/Start encounters
 				if(intrs[intrNum].getType() == 0){
@@ -2068,28 +2085,29 @@ public class CommandHandler{
 				return;
 			}
 			else{
-				text.printText("Input not recognized or interaction unavailable, please try again");
+				Text.printLine("Input not recognized or interaction unavailable, please try again");
 			}
 			
-			intrNum = text.testInput(intNames);
+			intrNum = Text.testInput(intNames);
 		}
 	}
 	
 	//Goto menu
 	private void goTo(String input){
-		if(player.hasStatusEffect(7)){
-			text.printText("You are paralyzed!");
+		if(Player.hasStatusEffect(7)){
+			Text.printLine("You are paralyzed!");
 			return;
 		}
 		
-		if(input.equals("")){
-			text.printTextAddLine("Where do you want to go?");
-		}
+		if(input.equals(""))
+			Text.printLineExtra("Where do you want to go?");
 		
-		Area[] accessibleAreas = areaHandler.getAccessibleAreas();
+		Area[] accessibleAreas = AreaHandler.getAccessibleAreas();
 		String[] areaNames = new String[accessibleAreas.length + 2];
 		
 		for(int i = 0; i < accessibleAreas.length; i++){
+			if(input.equals(""))
+				Text.printLine(accessibleAreas[i].getName(), accessibleAreas[i].getColor());
 			areaNames[i] = accessibleAreas[i].getName();
 		}
 		
@@ -2099,78 +2117,78 @@ public class CommandHandler{
 		int areaNum = -1;
 		
 		if(input.equals("")){
-			areaNum = text.testInput(areaNames);
+			areaNum = Text.testInput(areaNames);
 		}
 		else{
-			areaNum = text.testInput(input, areaNames);
+			areaNum = Text.testInput(input, areaNames);
 			
 			if(areaNum == -1){
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					return;
 			}
 		}
 		
-		Area area = areaHandler.getArea();
+		Area area = AreaHandler.getArea();
 		
 		while(true){
 			if(areaNum >= areaNames.length - 2){
-				text.printText("Goto cancelled.");
+				Text.printLine("Goto cancelled.");
 				return;
 			}
 			else if(areaNum > -1 && areaNum < areaNames.length - 2){
 				if(!accessibleAreas[areaNum].equals(area)){
-					text.printText("Leaving ");
-					text.print(area.getName(), area.getColor());
-					text.print("...");
+					Text.printLine("Leaving ");
+					Text.print(area.getName(), area.getColor());
+					Text.print("...");
 					waitSeconds(2, false);
 					
 					area = accessibleAreas[areaNum];
-					areaHandler.setArea(area);
+					AreaHandler.setArea(area);
 					
-					text.printText("You have arrived at ");
-					text.print(area.getName(), area.getColor());
-					text.print(".");
+					Text.printLine("You have arrived at ");
+					Text.print(area.getName(), area.getColor());
+					Text.print(".");
 					updatePlayer(true);
 					incrementUpdateTick = true;
 					
 					displayTip();
 				}
 				else{
-					text.printText("You are already in ");
-					text.print(area.getName(), area.getColor());
-					text.print(".");
+					Text.printLine("You are already in ");
+					Text.print(area.getName(), area.getColor());
+					Text.print(".");
 				}
 				return;
 			}
 			else{
 				if(input.equals("")){
-					text.printText("Input not recognized or area currently inaccessable, please try again");
+					Text.printLine("Input not recognized or area currently inaccessable, please try again");
 				}
 			}
 			
-			areaNum = text.testInput(areaNames);
+			areaNum = Text.testInput(areaNames);
 		}
 	}
 	
 	//Options menu
 	private void options(String input){
 		if(input.equals("")){
-			text.printTextAddLine(new String[]{"Type the option name to change it:", "Wait: "});
-			text.print(waitEnabled ? "ON" : "OFF", waitEnabled ? DARK_GREEN : Color.RED);
-			text.printText("Sound: ");
-			text.print(soundEnabled ? "ON" : "OFF", soundEnabled ? DARK_GREEN : Color.RED);
+			Text.printLineExtra(new String[]{"Type the option name to change it:", "Wait: "});
+			Text.print(Settings.waitEnabled() ? "ON" : "OFF", Settings.waitEnabled() ? COLOR_DARK_GREEN : Color.RED);
+			Text.printLine("Sound: ");
+			Text.print(Settings.soundEnabled() ? "ON" : "OFF", Settings.soundEnabled() ? COLOR_DARK_GREEN : Color.RED);
 		}
 
 		int stringChosen = -1;
 		
 		if(input.equals("")){
-			stringChosen = text.testInput(new String[]{"waiting", "wait", "w", "sounds", "sound", "s", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"waiting", "wait", "w", "sounds", "sound", "s", "back", "b"});
 		}
 		else{
-			stringChosen = text.testInput(input, new String[]{"waiting", "wait", "w", "sounds", "sound", "s", "back", "b"});
+			stringChosen = Text.testInput(input, new String[]{"waiting", "wait", "w", "sounds", "sound", "s", "back", "b"});
 			
 			if(stringChosen == -1){
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				return;
 			}
 		}
@@ -2178,32 +2196,40 @@ public class CommandHandler{
 		while(true){
 			switch(stringChosen){
 			case 0: case 1: case 2:
-				waitEnabled = !waitEnabled;
+				Settings.toggleWait();
 				
-				text.printTextAddLine("Wait is now ");
-				text.print(waitEnabled ? "ON" : "OFF", waitEnabled ? DARK_GREEN : Color.RED);
-				text.print(".");
+				Text.printLineExtra("Wait is now ");
+				Text.print(Settings.waitEnabled() ? "ON" : "OFF", Settings.waitEnabled() ? COLOR_DARK_GREEN : Color.RED);
+				Text.print(".");
+				
+				Text.printLineExtra(new String[]{"Type the option name to change it:", "Wait: "});
+				Text.print(Settings.waitEnabled() ? "ON" : "OFF", Settings.waitEnabled() ? COLOR_DARK_GREEN : Color.RED);
+				Text.printLine("Sound: ");
+				Text.print(Settings.soundEnabled() ? "ON" : "OFF", Settings.soundEnabled() ? COLOR_DARK_GREEN : Color.RED);
 				break;
 				
 			case 3: case 4: case 5:
-				soundEnabled = !soundEnabled;
+				Settings.toggleSound();
 				
-				text.printTextAddLine("Sound is now ");
-				text.print(soundEnabled ? "ON" : "OFF", soundEnabled ? DARK_GREEN : Color.RED);
-				text.print(".");
-				
-				sound.setSoundEnabled(soundEnabled);
+				Text.printLineExtra("Sound is now ");
+				Text.print(Settings.soundEnabled() ? "ON" : "OFF", Settings.soundEnabled() ? COLOR_DARK_GREEN : Color.RED);
+				Text.print(".");
+
+				Text.printLineExtra(new String[]{"Type the option name to change it:", "Wait: "});
+				Text.print(Settings.waitEnabled() ? "ON" : "OFF", Settings.waitEnabled() ? COLOR_DARK_GREEN : Color.RED);
+				Text.printLine("Sound: ");
+				Text.print(Settings.soundEnabled() ? "ON" : "OFF", Settings.soundEnabled() ? COLOR_DARK_GREEN : Color.RED);
 				break;
 				
 			case 6: case 7:
 				return;
 				
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"waiting", "wait", "w", "sounds", "sound", "s", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"waiting", "wait", "w", "sounds", "sound", "s", "back", "b"});
 		}
 	}
 	
@@ -2211,70 +2237,70 @@ public class CommandHandler{
 	private void executeCommand(boolean displayText){
 		
 		if(displayText)
-			text.printTextAddLine("Input a command to execute (give, set, spawn):");
+			Text.printLineExtra("Input a command to execute (give, set, spawn):");
 		
-		int stringChosen = text.testInput(new String[]{"give", "set", "spawn"});
+		int stringChosen = Text.testInput(new String[]{"give", "set", "spawn"});
 		
 		switch(stringChosen){
 		case 0:
-			if(!player.isInventoryFull()){
+			if(!Player.isInventoryFull()){
 				
-				text.printTextAddLine("Enter item name:");
+				Text.printLineExtra("Enter item name:");
 				
-				String itemName = text.testInput();
+				String itemName = Text.testInput();
 				boolean found = false;
 				
-				for(int i = 0; i < list.getNormalWeaponItemList().length; i++){
-					if(list.getNormalWeaponItemList()[i].getName().equalsIgnoreCase(itemName)){
-						giveItem(list.getNormalWeaponItemList()[i]);
+				for(int i = 0; i < ObjectList.getNormalWeaponItemList().length; i++){
+					if(ObjectList.getNormalWeaponItemList()[i].getName().equalsIgnoreCase(itemName)){
+						giveItem(ObjectList.getNormalWeaponItemList()[i]);
 						found = true;
 					}
 				}
 				
-				for(int i = 0; i < list.getSpecialWeaponItemList().length; i++){
-					if(list.getSpecialWeaponItemList()[i].getName().equalsIgnoreCase(itemName)){
-						giveItem(list.getSpecialWeaponItemList()[i]);
+				for(int i = 0; i < ObjectList.getSpecialWeaponItemList().length; i++){
+					if(ObjectList.getSpecialWeaponItemList()[i].getName().equalsIgnoreCase(itemName)){
+						giveItem(ObjectList.getSpecialWeaponItemList()[i]);
 						found = true;
 					}
 				}
 				
-				for(int i = 0; i < list.getArmorItemList().length; i++){
-					if(list.getArmorItemList()[i].getName().equalsIgnoreCase(itemName)){
-						giveItem(list.getArmorItemList()[i]);
+				for(int i = 0; i < ObjectList.getArmorItemList().length; i++){
+					if(ObjectList.getArmorItemList()[i].getName().equalsIgnoreCase(itemName)){
+						giveItem(ObjectList.getArmorItemList()[i]);
 						found = true;
 					}
 				}
 				
-				for(int i = 0; i < list.getConsumableItemList().length; i++){
-					if(list.getConsumableItemList()[i].getName().equalsIgnoreCase(itemName)){
-						giveItem(list.getConsumableItemList()[i]);
+				for(int i = 0; i < ObjectList.getConsumableItemList().length; i++){
+					if(ObjectList.getConsumableItemList()[i].getName().equalsIgnoreCase(itemName)){
+						giveItem(ObjectList.getConsumableItemList()[i]);
 						found = true;
 					}
 				}
 				
-				for(int i = 0; i < list.getMiscItemList().length; i++){
-					if(list.getMiscItemList()[i].getName().equalsIgnoreCase(itemName)){
-						giveItem(list.getMiscItemList()[i]);
+				for(int i = 0; i < ObjectList.getMiscItemList().length; i++){
+					if(ObjectList.getMiscItemList()[i].getName().equalsIgnoreCase(itemName)){
+						giveItem(ObjectList.getMiscItemList()[i]);
 						found = true;
 					}
 				}
 				if(!found){
-					text.printText("Item not found!");
+					Text.printLine("Item not found!");
 				}
 			}
 			else{
-				text.printText("Inventory full.");
+				Text.printLine("Inventory full.");
 			}
 			return;
 		
 		case 1:
-			text.printTextAddLine("Enter value to set (hp, mp, gold, inventory, xp, level):");
+			Text.printLineExtra("Enter value to set (hp, mp, gold, inventory, xp, level):");
 			
-			int stringChosen2 = text.testInput(new String[]{"hp", "mp", "gold", "inventory", "xp", "level"});
+			int stringChosen2 = Text.testInput(new String[]{"hp", "mp", "gold", "inventory", "xp", "level"});
 
-			text.printText("Enter amount:");
+			Text.printLine("Enter amount:");
 			
-			String stringChosen3 = text.testInput();
+			String stringChosen3 = Text.testInput();
 			
 			int amount = 1;
 			
@@ -2285,59 +2311,60 @@ public class CommandHandler{
 			
 			switch(stringChosen2){
 				case 0:
-					player.setMaxHealth(amount);
-					player.setHealth(amount);
+					Player.setMaxHealth(amount);
+					Player.setHealth(amount);
 					return;
 				
 				case 1:
-					player.setMaxMagic(amount);
-					player.setMagic(amount);
+					Player.setMaxMagic(amount);
+					Player.setMagic(amount);
 					return;
 				
 				case 2:
-					player.setGold(amount);
+					Player.setGold(amount);
 					return;
 				
 				case 4:
-					player.setInventorySpace(amount);
+					Player.setInventorySpace(amount);
 					return;
 				
 				case 5:
-					player.addXP(amount);
+					Player.addXP(amount);
 					return;
 				
 				case 6:
-					player.setLevel(amount);
+					Player.setLevel(amount);
 					return;
 			}
 			return;
 		
 		case 2:
 			
-			text.printTextAddLine("Enter enemy name or ID:");
-			String stringChosen4 = text.testInput();
+			Text.printLineExtra("Enter enemy name or ID:");
+			String stringChosen4 = Text.testInput();
 			
 			try{
-				enemyEncounter(list.getEnemyList()[Integer.parseInt(stringChosen4)]);
+				enemyEncounter(ObjectList.getEnemyList()[Integer.parseInt(stringChosen4)]);
+				return;
 			}
 			catch(NumberFormatException e){
-				for(int i = 0; i < list.getEnemyList().length; i++){
-					if(list.getEnemyList()[i].getEnemyName().toLowerCase().equals(stringChosen4)){
-						enemyEncounter(list.getEnemyList()[i]);
+				for(int i = 0; i < ObjectList.getEnemyList().length; i++){
+					if(ObjectList.getEnemyList()[i].getEnemyName().toLowerCase().equals(stringChosen4)){
+						enemyEncounter(ObjectList.getEnemyList()[i]);
 						return;
 					}
 				}
 			}
 			catch(ArrayIndexOutOfBoundsException e){
-				text.printText("Invalid ID!");
+				Text.printLine("Invalid ID!");
 				return;
 			}
 			
-			text.printText("Enemy not found!");
+			Text.printLine("Enemy not found!");
 			return;
 			
 		default:
-			text.printText("Input not recognized, please try again");
+			Text.printLine("Input not recognized, please try again");
 			executeCommand(false);
 			return;
 		}
@@ -2351,38 +2378,38 @@ public class CommandHandler{
 		
 		String enemyName = enemy.getEnemyName();
 		
-		text.printTextAddLine("You've encountered a");
+		Text.printLineExtra("You've encountered a");
 		
 		if(enemyName.startsWith("A") || enemyName.startsWith("E") || enemyName.startsWith("I") || enemyName.startsWith("O") || enemyName.startsWith("U")){
-			text.print("n");
+			Text.print("n");
 		}
 		
-		text.print(" " + enemyName, enemy.getColor());
-		text.print("!");
+		Text.print(" " + enemyName, enemy.getColor());
+		Text.print("!");
 		
-		sound.playSound(enemy.getSound());
+		Sound.playSound(enemy.getSound());
 		
 		inFight = true;
 		
-		int turn = 0;
+		boolean enemyTurn = false;
 		
 		if(enemy.attacksFirst()){
-			turn = 1;
+			enemyTurn = true;
 		}
 		
 		while(inFight){
 			
-			if(turn == 0){
+			if(!enemyTurn){
 				updatePlayer(true);
 				enemyEncounterPlayerCommands();
 			}
 			
-			if(player.getHealth() <= 0 || enemy.getHealth() <= 0){
+			if(Player.getHealth() <= 0 || enemy.getHealth() <= 0){
 				inFight = false;
 				return;
 			}
 			
-			if(turn == 1){
+			if(enemyTurn){
 				
 				Attack[] attacks = enemy.getAttacks();
 				int attackNum = 0;
@@ -2419,92 +2446,87 @@ public class CommandHandler{
 				}
 				
 				waitSeconds(1, false);
-				text.printTextAddLine("The ");
-				text.print(enemy.getEnemyName(), enemy.getColor());
-				text.print(" used ");
-				text.print(attacks[attackNum].getAttackName(), attacks[attackNum].getColor());
-				text.print("!");
+				Text.printLineExtra("The ");
+				Text.print(enemy.getEnemyName(), enemy.getColor());
+				Text.print(" used ");
+				Text.print(attacks[attackNum].getAttackName(), attacks[attackNum].getColor());
+				Text.print("!");
 
-				if(waitEnabled){
-					sound.playSound(attacks[attackNum].getSound());
+				if(Settings.waitEnabled()){
+					Sound.playSound(attacks[attackNum].getSound());
 				}
 				
 				waitSeconds(1, false);
 				
 				if(!attacks[attackNum].getRandomHit()){
-					text.printText("The attack missed!", DARK_GREEN);
+					Text.printLine("The attack missed!", COLOR_DARK_GREEN);
 				}
 				else{
 					if(enemy.getRandomHitFail()){
-						text.printText("The attack failed due to confusion!", DARK_GREEN);
+						Text.printLine("The attack failed due to confusion!", COLOR_DARK_GREEN);
 					}
 					else{
 						
 						boolean blocked = false;
 						
-						if(player.hasStatusEffect(19)){
-							int level = player.getStatusEffectLevel(19);
+						if(Player.hasStatusEffect(19)){
+							int level = Player.getStatusEffectLevel(19);
 							
-							if(level > 0 && random.nextInt(99) + 1 <= level*5){
+							if(level > 0 && RandomGen.randomChance(level*5)){
 								blocked = true;
 							}
 							
 						}
 						if(blocked){
-							text.printText("You blocked the attack!", DARK_GREEN);
+							Text.printLine("You blocked the attack!", COLOR_DARK_GREEN);
 						}
 						else{
-							int damage = attacks[attackNum].getRandomDamage() - player.getDefense();
+							int damage = (int)((attacks[attackNum].getRandomDamage()*enemy.getDamageMultiplier()) - Player.getDefense());
 							
 							if(damage < 0){
 								damage = 0;
 							}
 							
-							if(player.hasStatusEffect(20)){
-								damage *= -(player.getStatusEffectLevel(20)/20);
+							if(Player.hasStatusEffect(20)){
+								damage *= -(Player.getStatusEffectLevel(20)/20);
 							}
 
-							int newLife = player.getHealth() - damage;
-							
+							int newLife = Player.getHealth() - damage;
 							
 							if(newLife < 0){
 								newLife = 0;
 							}
 							
-							player.setHealth(newLife);
+							Player.setHealth(newLife);
 	
 							if(damage == 0 && attacks[attackNum].getMaximumDamage() != 0){
-								text.printText("The attack was inaffective!", DARK_GREEN);
-								text.printText("You still have ");
-								text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health", Color.RED);
-								text.print(" left!");
+								Text.printLine("The attack was inaffective!", COLOR_DARK_GREEN);
+								Text.printLine("You still have ");
+								Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+								Text.print(" left!");
 							}
 							else if(damage < 0){
-								text.printText("It healed ");
-								text.print(Integer.toString(damage) + " damage", DARK_GREEN);
-								text.print("!");
+								Text.printLine("It healed ");
+								Text.print(Integer.toString(-damage) + " damage", COLOR_DARK_GREEN);
+								Text.print("!");
 
-								text.printText("You now have ");
-								text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health", Color.RED);
-								text.print(" left!");
+								Text.printLine("You now have ");
+								Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+								Text.print(" left!");
 							}
 							else if(attacks[attackNum].getMaximumDamage() != 0){
-								text.printText("It dealt ");
-								text.print(Integer.toString(damage) + " damage", Color.RED);
-								text.print("!");
+								Text.printLine("It dealt ");
+								Text.print(Integer.toString(damage) + " damage", Color.RED);
+								Text.print("!");
 								
 								if(newLife > 0){
-									text.printText("You now have ");
-									text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health", Color.RED);
-									text.print(" left!");
+									Text.printLine("You now have ");
+									Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+									Text.print(" left!");
 									
-									sound.playSound("hurt01.wav");
+									Sound.playSound("hurt01.wav");
 								}
 								else{
-									if(player.getHealth() + damage >= player.getMaxHealth() && damage >= player.getMaxHealth()){
-										text.printText("It's a one-hit kill!", Color.RED);
-									}
-									
 									playerDeath();
 								}
 							}
@@ -2517,35 +2539,39 @@ public class CommandHandler{
 									String effectName = effect.getName();
 									
 									if(effect.isTargetingPlayer()){
-										if(!player.isImmuneToStatusEffect(effect)){
-											player.addStatusEffect(effect);
+										if(!Player.isImmuneToStatusEffect(effect)){
+											Player.addStatusEffect(effect);
 											
-											text.printText("You got a ");
-											text.print(effectName, effect.isDebuff() ? Color.RED : DARK_GREEN);
-											text.print(" effect!");
+											Text.printLine("You got a ");
+											Text.print(effectName, effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+											Text.print(" effect!");
 										}
 										else{
-											text.printText("You got a ");
-											text.print(effectName, effect.isDebuff() ? Color.RED : DARK_GREEN);
-											text.print(" effect, but you are ");
-											text.print("immune", effect.isDebuff() ? DARK_GREEN : Color.RED);
-											text.print("!");
+											Text.printLine("You got a ");
+											Text.print(effectName, effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+											Text.print(" effect, but you are ");
+											Text.print("immune", effect.isDebuff() ? COLOR_DARK_GREEN : Color.RED);
+											Text.print("!");
 										}
 									}
 									else{
 										if(!enemy.isImmuneToStatusEffect(effect)){
 											enemy.addStatusEffect(effect);
 											
-											text.printText("The enemy got a ");
-											text.print(effectName, effect.isDebuff() ? DARK_GREEN : Color.RED);
-											text.print(" effect!");
+											Text.printLine("The enemy got a ");
+											Text.print(effectName, effect.isDebuff() ? COLOR_DARK_GREEN : Color.RED);
+											Text.print(" effect!");
 										}
 										else{
-											text.printText("The enemy got a ");
-											text.print(effectName, effect.isDebuff() ? DARK_GREEN : Color.RED);
-											text.print(" effect, but it is ");
-											text.print("immune", effect.isDebuff() ? Color.RED : DARK_GREEN);
-											text.print("!");
+											Text.printLine("The enemy got a ");
+											Text.print(effectName, effect.isDebuff() ? COLOR_DARK_GREEN : Color.RED);
+											Text.print(" effect, but it is ");
+											Text.print("immune", effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+											Text.print("!");
+										}
+										
+										if(enemy.getHealth() <= 0){
+											Text.printLine("The enemy died due to the effect!", COLOR_DARK_GREEN);
 										}
 									}
 								}
@@ -2557,27 +2583,23 @@ public class CommandHandler{
 				waitSeconds(1, false);
 			}
 			
-			turn++;
+			enemyTurn = !enemyTurn;
 			
-			if(turn >= 2){
-				turn = 0;
-			}
-			
-			if(player.getHealth() <= 0 || enemy.getHealth() <= 0){
+			if(Player.getHealth() <= 0 || enemy.getHealth() <= 0){
 				inFight = false;
 			}
 		}
 	}
 	
-	//Enemy fight player's turn
+	//Enemy fight Player's turn
 	private void enemyEncounterPlayerCommands(){
 		
-		text.printTextAddLine(new String[]{"What will you do?", "Attack", "Items", "Equip", "Stats", "Examine Enemy", "Run"});
+		Text.printLineExtra(new String[]{"What will you do?", "Attack", "Items", "Equip", "Stats", "Examine Enemy", "Run"});
 		
-		int stringChosen = text.testInput(new String[]{"attacks", "attack", "a", "items", "item", "i", "equips", "equip", "eq", "stats", "st", "s", "run", "r", "examine enemy", "examine", "enemy", "e"});
+		int stringChosen = Text.testInput(new String[]{"attacks", "attack", "a", "items", "item", "i", "equips", "equip", "eq", "stats", "st", "s", "run", "r", "examine enemy", "examine", "enemy", "e"});
 		
 		if(stringChosen == -1){
-			stringChosen = text.testInput(text.trimToSpace(text.getLastInput()), acceptedInput);
+			stringChosen = Text.testInput(Text.trimToSpace(Text.getLastInput()), acceptedInput);
 		}
 		
 		boolean displayText = true;
@@ -2585,21 +2607,21 @@ public class CommandHandler{
 		while(true){
 			switch(stringChosen){
 			case 0: case 1: case 2:
-				if(!enemyEncounterPlayerAttack(text.trimFromSpace(text.getLastInput()))){
+				if(!enemyEncounterPlayerAttack(Text.trimFromSpace(Text.getLastInput()))){
 					displayText = true;
 					break;
 				}
 				return;
 				
 			case 3: case 4: case 5:
-				if(!useItem(text.trimFromSpace(text.getLastInput()))){
+				if(!useItem(Text.trimFromSpace(Text.getLastInput()))){
 					displayText = true;
 					break;
 				}
 				return;
 				
 			case 6: case 7: case 8:
-				equipItem(text.trimFromSpace(text.getLastInput()));
+				equipItem(Text.trimFromSpace(Text.getLastInput()));
 				displayText = true;
 				break;
 			
@@ -2609,36 +2631,34 @@ public class CommandHandler{
 				break;
 			
 			case 12: case 13:
-				if(player.hasStatusEffect(7)){
-					text.addLine();
-					text.printText("You cannot run, you are paralyzed!", Color.RED);
+				if(Player.hasStatusEffect(7)){
+					Text.addLine();
+					Text.printLine("You cannot run, you are paralyzed!", Color.RED);
 					break;
 				}
 				
-				text.printTextAddLine("Attempting to escape...");
-				waitSeconds(random.nextInt(1) + 1, false);
+				Text.printLineExtra("Attempting to escape...");
+				waitSeconds(RandomGen.getInt(1, 2), false);
 				
-				int escape = random.nextInt(99) + 1;
-				
-				if(escape <= enemy.getEscapeRate()){
-					text.printText("You escaped successfully!", DARK_GREEN);
+				if(RandomGen.randomChance(enemy.getEscapeRate())){
+					Text.printLine("You escaped successfully!", COLOR_DARK_GREEN);
 					inFight = false;
 				}
 				else{
-					text.printText("You could not escape!", Color.RED);
+					Text.printLine("You could not escape!", Color.RED);
 				}
 				
 				return;
 			
 			case 14: case 15: case 16: case 17:
-				text.printTextAddLine("The enemy has ");
-				text.print(Integer.toString(enemy.getHealth()) + "/" + Integer.toString(enemy.getMaxHealth()) + " health ", Color.RED);
-				text.print("and ");
-				text.print(Integer.toString(enemy.getDefense()) + " defense", Color.DARK_GRAY);
-				text.print(".");
+				Text.printLineExtra("The enemy has ");
+				Text.print(Integer.toString(enemy.getHealth()) + "/" + Integer.toString(enemy.getMaxHealth()) + " health ", Color.RED);
+				Text.print("and ");
+				Text.print(Integer.toString(enemy.getDefense()) + " defense", Color.DARK_GRAY);
+				Text.print(".");
 				
 				if(enemy.hasStatusEffects()){
-					text.printText("The enemy also has these status effects:");
+					Text.printLine("The enemy also has these status effects:");
 					
 					StatusEffect[] effects = enemy.getStatusEffects();
 					
@@ -2651,9 +2671,9 @@ public class CommandHandler{
 								plural = "";
 							}
 	
-							text.printText("Level " + effects[i].getLevel() + " ");
-							text.print(effects[i].getName(), effects[i].isDebuff() ? Color.RED : DARK_GREEN);
-							text.print(" with " + effects[i].getLength() + " turn" + plural + " remaining");
+							Text.printLine("Level " + effects[i].getLevel() + " ");
+							Text.print(effects[i].getName(), effects[i].isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+							Text.print(" with " + effects[i].getLength() + " turn" + plural + " remaining");
 						}
 					}
 				}
@@ -2662,36 +2682,36 @@ public class CommandHandler{
 				break;
 			
 			default:
-				text.printText("Input not recognized or command currently unavailable, please try again");
+				Text.printLine("Input not recognized or command currently unavailable, please try again");
 				displayText = false;
 				break;
 			}
 			
 			if(displayText){
-				text.printTextAddLine(new String[]{"What will you do?", "Attack", "Items", "Equip", "Stats", "Examine Enemy", "Run"});
+				Text.printLineExtra(new String[]{"What will you do?", "Attack", "Items", "Equip", "Stats", "Examine Enemy", "Run"});
 			}
 			
-			stringChosen = text.testInput(new String[]{"attacks", "attack", "a", "items", "item", "i", "equips", "equip", "eq", "stats", "st", "s", "run", "r", "examine enemy", "examine", "enemy", "e"});
+			stringChosen = Text.testInput(new String[]{"attacks", "attack", "a", "items", "item", "i", "equips", "equip", "eq", "stats", "st", "s", "run", "r", "examine enemy", "examine", "enemy", "e"});
 		}
 	}
 	
-	//Enemy fight player attack menu
+	//Enemy fight Player attack menu
 	private boolean enemyEncounterPlayerAttack(String input){
 		
 		if(input.equals("")){
-			text.printText("Use a normal attack or special attack?");
+			Text.printLine("Use a normal attack or special attack?");
 		}
 		
 		int stringChosen = -1;
 		
 		if(input.equals("")){
-			stringChosen = text.testInput(new String[]{"normal attack", "normal", "n", "special attack", "special", "s", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"normal attack", "normal", "n", "special attack", "special", "s", "back", "b"});
 		}
 		else{
-			stringChosen = text.testInput(input, new String[]{"normal attack", "normal", "n", "special attack", "special", "s", "back", "b"});
+			stringChosen = Text.testInput(input, new String[]{"normal attack", "normal", "n", "special attack", "special", "s", "back", "b"});
 			
 			if(stringChosen == -1){
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				return false;
 			}
 		}
@@ -2708,34 +2728,47 @@ public class CommandHandler{
 				return false;
 			
 			default:
-				text.printText("Input not recognized, please try again");
+				Text.printLine("Input not recognized, please try again");
 				break;
 			}
 			
-			stringChosen = text.testInput(new String[]{"normal attack", "normal", "n", "special attack", "special", "s", "back", "b"});
+			stringChosen = Text.testInput(new String[]{"normal attack", "normal", "n", "special attack", "special", "s", "back", "b"});
 		}
 	}
 	
-	//Enemy fight player attack submenu (choosing specific attack)
-	private boolean enemyEncounterPlayerAttackSub(boolean isSpecialAttack){
+	//Enemy fight Player attack submenu (choosing specific attack)
+	private boolean enemyEncounterPlayerAttackSub(boolean specialAttack){
 		
 		int slot = 0;
 		
-		if(isSpecialAttack){
+		if(specialAttack)
 			slot = 1;
-		}
 		
-		Attack[] attacks = player.getInventory()[slot].getWeaponAttacks();
+		Attack[] attacks = Player.getInventory()[slot].getWeaponAttacks();
 		String[] attackNames = new String[attacks.length + 2];
+		
+		if(specialAttack){
+			boolean able = false;
+			
+			for(Attack a:attacks){
+				if(Player.getMagic() >= a.getUserBasedInt())
+					able = true;
+			}
+			
+			if(!able){
+				Text.printLine("Not enough magic!", Color.RED);
+				return false;
+			}
+		}
 		
 		int attackNum = -1;
 		
 		if(attacks.length > 1){
 			
-			text.printTextAddLine("Which attack do you want to use?");
+			Text.printLineExtra("Which attack do you want to use?");
 			
 			for(int i = 0; i < attacks.length; i++){
-				text.printText(" " + attacks[i].getAttackName(), attacks[i].getColor());
+				Text.printLine(" " + attacks[i].getAttackName(), attacks[i].getColor());
 			}
 			
 			for(int i = 0; i < attacks.length; i++){
@@ -2746,13 +2779,13 @@ public class CommandHandler{
 			attackNames[attackNames.length - 2] = "back";
 			
 			while(attackNum == -1){
-				attackNum = text.testInput(attackNames);
+				attackNum = Text.testInput(attackNames);
 				
 				if(attackNum >= attackNames.length - 2){
 					return false;
 				}
 				else if(attackNum == -1){
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 				}
 			}
 		}
@@ -2760,28 +2793,28 @@ public class CommandHandler{
 			attackNum = 0;
 		}
 		
-		if(!isSpecialAttack || (isSpecialAttack && player.getMagic() >= attacks[attackNum].getUserBasedInt()) && !player.hasStatusEffect(5)){
-			text.printTextAddLine("You used ");
-			text.print(attacks[attackNum].getAttackName(), attacks[attackNum].getColor());
-			text.print("!");
+		if(!specialAttack || (specialAttack && Player.getMagic() >= attacks[attackNum].getUserBasedInt()) && !Player.hasStatusEffect(5)){
+			Text.printLineExtra("You used ");
+			Text.print(attacks[attackNum].getAttackName(), attacks[attackNum].getColor());
+			Text.print("!");
 			
-			if(waitEnabled){
-				sound.playSound(attacks[attackNum].getSound());
+			if(Settings.waitEnabled()){
+				Sound.playSound(attacks[attackNum].getSound());
 			}
 			
-			if(isSpecialAttack){
-				player.setMagic(player.getMagic() - attacks[attackNum].getUserBasedInt());
+			if(specialAttack){
+				Player.setMagic(Player.getMagic() - attacks[attackNum].getUserBasedInt());
 			}
 			
 			waitSeconds(1, false);
 			
 			if(!attacks[attackNum].getRandomHit()){
-				text.printText("Your attack missed!", Color.RED);
+				Text.printLine("Your attack missed!", Color.RED);
 				return true;
 			}
 			else{
-				if(player.getRandomHitFail()){
-					text.printText("Your attack failed due to confusion!", Color.RED);
+				if(Player.getRandomHitFail()){
+					Text.printLine("Your attack failed due to confusion!", Color.RED);
 					return true;
 				}
 				else{
@@ -2790,27 +2823,24 @@ public class CommandHandler{
 					if(enemy.hasStatusEffect(19)){
 						int level = enemy.getStatusEffectLevel(19);
 						
-						if(level > 0 && random.nextInt(99) + 1 <= level*5){
+						if(level > 0 && RandomGen.randomChance(level*5)){
 							blocked = true;
 						}
 						
 					}
 					if(blocked){
-						text.printText("The enemy blocked the attack!", Color.RED);
+						Text.printLine("The enemy blocked the attack!", Color.RED);
 						return true;
 					}
 					else{
-						int temp = (int)(attacks[attackNum].getRandomDamage()*player.getDamageMultiplier());
-						
-						int damage = temp - enemy.getDefense();
+						int damage = (int)(attacks[attackNum].getRandomDamage()*Player.getDamageMultiplier()) - enemy.getDefense();
 						
 						if(damage < 0){
 							damage = 0;
 						}
 						
 						if(enemy.hasStatusEffect(20)){
-							double dmgTemp = damage*-((double)(enemy.getStatusEffectLevel(20))/20);
-							damage = (int)Math.round(dmgTemp);
+							damage *= -((double)(enemy.getStatusEffectLevel(20))/20);
 						}
 						
 						int newLife = enemy.getHealth() - damage;
@@ -2822,61 +2852,59 @@ public class CommandHandler{
 						enemy.setHealth(newLife);
 						
 						if(damage == 0 && attacks[attackNum].getMaximumDamage() != 0){
-							text.printText("The attack was inaffective!", Color.RED);
+							Text.printLine("The attack was inaffective!", Color.RED);
 						}
 						else if(damage < 0){
-							text.printText("It healed ");
-							text.print(Integer.toString(damage) + " damage", Color.RED);
-							text.print("!");
+							Text.printLine("It healed ");
+							Text.print(Integer.toString(-damage) + " damage", Color.RED);
+							Text.print("!");
 						}
 						else if(attacks[attackNum].getMaximumDamage() != 0){
-							text.printText("It dealt ");
-							text.print(Integer.toString(damage) + " damage", Color.RED);
-							text.print("!");
+							Text.printLine("It dealt ");
+							Text.print(Integer.toString(damage) + " damage", Color.RED);
+							Text.print("!");
 							
 							if(newLife > 0){
-								if(waitEnabled){
-									sound.playSound(enemy.getHitSound());
-								}
+								Text.printLine("The enemy now has ");
+								Text.print(Integer.toString(enemy.getHealth()) + "/" + Integer.toString(enemy.getMaxHealth()) + " health", Color.RED);
+								Text.print(" left!");
+								
+								Sound.playSound(enemy.getHitSound());
 							}
 							else{
-								if(enemy.getHealth() + damage >= enemy.getMaxHealth() && damage >= enemy.getMaxHealth()){
-									text.printText("It's a one-hit kill!", DARK_GREEN);
-								}
-								
-								text.printTextAddLine("The " + enemy.getEnemyName() + " was killed!");
-								sound.playSound(enemy.getSound());
+								Text.printLineExtra("The " + enemy.getEnemyName() + " was killed!");
+								Sound.playSound(enemy.getSound());
 								
 								int xp = enemy.getRandomXP();
 								
-								text.printText("You got ");
-								text.print(Integer.toString(xp) + " experience", DARK_GREEN);
-								text.print("!");
+								Text.printLine("You got ");
+								Text.print(Integer.toString(xp) + " experience", COLOR_DARK_GREEN);
+								Text.print("!");
 								
-								int level = player.getLevel();
-								player.addXP(xp);
+								int level = Player.getLevel();
+								Player.addXP(xp);
 								
-								if(level < player.getLevel()){
-									text.printText("You grew to ");
-									text.print("level " + Integer.toString(player.getLevel()), GOLD);
-									text.print("!");
+								if(level < Player.getLevel()){
+									Text.printLine("You grew to ");
+									Text.print("level " + Integer.toString(Player.getLevel()), COLOR_GOLD);
+									Text.print("!");
 								}
 	
 								int gold = enemy.getRandomGold();
 								
-								text.printText("You got ");
-								text.print(Integer.toString(gold) + " gold", GOLD);
-								text.print("!");
-								player.setGold(player.getGold() + gold);
+								Text.printLine("You got ");
+								Text.print(Integer.toString(gold) + " gold", COLOR_GOLD);
+								Text.print("!");
+								Player.setGold(Player.getGold() + gold);
 								
 								Item item = enemy.getRandomDrop();
 								
 								if(!item.getName().equals(emptyItem.getName())){
-									text.printTextAddLine("The enemy dropped ");
-									text.print(item.getDisplayName(), item.getColor());
-									text.print(".");
-									text.printText("Do you want to pick it up?");
-									text.printYN();
+									Text.printLineExtra("The enemy dropped ");
+									Text.print(item.getDisplayName(), item.getColor());
+									Text.print(".");
+									Text.printLine("Do you want to pick it up?");
+									Text.printYN();
 									giveItem(item);
 								}
 								
@@ -2892,35 +2920,39 @@ public class CommandHandler{
 							String effectName = effect.getName();
 							
 							if(effect.isTargetingPlayer()){
-								if(!player.isImmuneToStatusEffect(effect)){
-									player.addStatusEffect(effect);
+								if(!Player.isImmuneToStatusEffect(effect)){
+									Player.addStatusEffect(effect);
 									
-									text.printText("You got a ");
-									text.print(effectName, effect.isDebuff() ? Color.RED : DARK_GREEN);
-									text.print(" effect!");
+									Text.printLine("You got a ");
+									Text.print(effectName, effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+									Text.print(" effect!");
 								}
 								else{
-									text.printText("You got a ");
-									text.print(effectName, effect.isDebuff() ? Color.RED : DARK_GREEN);
-									text.print(" effect, but you are ");
-									text.print("immune", effect.isDebuff() ? DARK_GREEN : Color.RED);
-									text.print("!");
+									Text.printLine("You got a ");
+									Text.print(effectName, effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+									Text.print(" effect, but you are ");
+									Text.print("immune", effect.isDebuff() ? COLOR_DARK_GREEN : Color.RED);
+									Text.print("!");
 								}
 							}
 							else{
 								if(!enemy.isImmuneToStatusEffect(effect)){
 									enemy.addStatusEffect(effect);
 									
-									text.printText("The enemy got a ");
-									text.print(effectName, effect.isDebuff() ? DARK_GREEN : Color.RED);
-									text.print(" effect!");
+									Text.printLine("The enemy got a ");
+									Text.print(effectName, effect.isDebuff() ? COLOR_DARK_GREEN : Color.RED);
+									Text.print(" effect!");
 								}
 								else{
-									text.printText("The enemy got a ");
-									text.print(effectName, effect.isDebuff() ? DARK_GREEN : Color.RED);
-									text.print(" effect, but it is ");
-									text.print("immune", effect.isDebuff() ? Color.RED : DARK_GREEN);
-									text.print("!");
+									Text.printLine("The enemy got a ");
+									Text.print(effectName, effect.isDebuff() ? COLOR_DARK_GREEN : Color.RED);
+									Text.print(" effect, but it is ");
+									Text.print("immune", effect.isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+									Text.print("!");
+								}
+								
+								if(enemy.getHealth() <= 0){
+									Text.printLine("The enemy died due to the effect!", COLOR_DARK_GREEN);
 								}
 							}
 						}
@@ -2930,12 +2962,12 @@ public class CommandHandler{
 				}
 			}
 		}
-		else if(isSpecialAttack && player.hasStatusEffect(5)){
-			text.printText("You are imprisoned!", Color.RED);
+		else if(specialAttack && Player.hasStatusEffect(5)){
+			Text.printLine("You are imprisoned!", Color.RED);
 			return false;
 		}
-		else if(isSpecialAttack && player.getMagic() < attacks[attackNum].getUserBasedInt()){
-			text.printText("Not enough magic!", Color.RED);
+		else if(specialAttack && Player.getMagic() < attacks[attackNum].getUserBasedInt()){
+			Text.printLine("Not enough magic!", Color.RED);
 			return false;
 		}
 		
@@ -2946,9 +2978,9 @@ public class CommandHandler{
 	//Extra functions
 	public void updatePlayer(boolean updateStatusEffects){
 		
-		player.updatePlayer();
+		Player.updatePlayer();
 		
-		if(!player.isPlayerAlive()){
+		if(!Player.isPlayerAlive()){
 			playerDeath();
 		}
 		
@@ -2959,38 +2991,38 @@ public class CommandHandler{
 	
 	public void updatePlayerStatusEffects(){
 		
-		StatusEffect[] endedEffects = player.updateStatusEffects(true);
+		StatusEffect[] endedEffects = Player.updateStatusEffects(true);
 		
-		for(int i = 0; i < player.getStatusEffects().length; i++){
+		for(int i = 0; i < Player.getStatusEffects().length; i++){
 			if(endedEffects[i].getType() != emptyEffect.getType()){
 				
 				String effectName = endedEffects[i].getName();
 				
-				text.printTextAddLine("Your " + effectName + " effect wore off!");
+				Text.printLineExtra("Your " + effectName + " effect wore off!");
 			}
 		}
 	}
 	
 	public void playerDeath(){
-		text.printTextAddLine(new String[]{"You have died!", "Exiting game. You can re-open and load from a previous save."});
-		sound.playSound("death01.wav");
+		Text.printLineExtra(new String[]{"You have died!", "Exiting game. You can re-open and load from a previous save."});
+		Sound.playSound("death01.wav");
 		waitSeconds(6, true);
 		System.exit(0);
 	}
 	
 	public void printStats(){
-		text.printTextAddLine("You have ");
-		text.print(Integer.toString(player.getHealth()) + "/" + Integer.toString(player.getMaxHealth()) + " health", Color.RED);
-		text.print(", ");
-		text.print(Integer.toString(player.getMagic()) + "/" + Integer.toString(player.getMaxMagic()) + " magic", Color.BLUE);
-		text.print(", and ");
-		text.print(Integer.toString(player.getDefense()) + " defense", Color.DARK_GRAY);
-		text.print(".");
+		Text.printLineExtra("You have ");
+		Text.print(Integer.toString(Player.getHealth()) + "/" + Integer.toString(Player.getMaxHealth()) + " health", Color.RED);
+		Text.print(", ");
+		Text.print(Integer.toString(Player.getMagic()) + "/" + Integer.toString(Player.getMaxMagic()) + " magic", Color.BLUE);
+		Text.print(", and ");
+		Text.print(Integer.toString(Player.getDefense()) + " defense", Color.DARK_GRAY);
+		Text.print(".");
 		
-		if(player.hasStatusEffects()){
-			text.printText("You also have these status effects:");
+		if(Player.hasStatusEffects()){
+			Text.printLine("You also have these status effects:");
 			
-			StatusEffect[] effects = player.getStatusEffects();
+			StatusEffect[] effects = Player.getStatusEffects();
 			
 			for(int i = 0; i < effects.length; i++){
 				if(effects[i].getType() != (emptyEffect.getType())){
@@ -3000,9 +3032,9 @@ public class CommandHandler{
 						plural = "";
 					}
 					
-					text.printText("Level " + effects[i].getLevel() + " ");
-					text.print(effects[i].getName(), effects[i].isDebuff() ? Color.RED : DARK_GREEN);
-					text.print(" with " + effects[i].getLength() + " turn" + plural + " remaining");
+					Text.printLine("Level " + effects[i].getLevel() + " ");
+					Text.print(effects[i].getName(), effects[i].isDebuff() ? Color.RED : COLOR_DARK_GREEN);
+					Text.print(" with " + effects[i].getLength() + " turn" + plural + " remaining");
 				}
 			}
 		}
@@ -3016,7 +3048,7 @@ public class CommandHandler{
 			if(ignoreWaitEnabled){
 				TimeUnit.MILLISECONDS.sleep(milliseconds);
 			}
-			else if(waitEnabled && !ignoreWaitEnabled){
+			else if(Settings.waitEnabled() && !ignoreWaitEnabled){
 				TimeUnit.MILLISECONDS.sleep(milliseconds);
 			}
 			
@@ -3024,40 +3056,14 @@ public class CommandHandler{
 			e.printStackTrace();
 		}
 	}
-	
-	public void setWaitEnabled(boolean waitEnabled){
-		this.waitEnabled = waitEnabled;
-	}
+
 	
 	private void displayTip(){
-		text.addLine();
-		text.printText("-TIP-: " + tips[random.nextInt(tips.length)], new Color(0, 128, 0));
+		Text.addLine();
+		Text.printLine("-TIP-: " + tips[RandomGen.getInt(tips.length)], new Color(0, 128, 0));
 	}
 	
 	//Getters and setters used by GameHandler
-	public boolean getWaitEnabled(){
-		return waitEnabled;
-	}
-	
-	public AreaHandler getAreaHandler(){
-		return areaHandler;
-	}
-	
-	public void setPlayer(Player player){
-		this.player = player;
-	}
-	
-	public void setAreaHandler(AreaHandler areaHandler){
-		this.areaHandler = areaHandler;
-	}
-	
-	public void setDebugMode(boolean debugMode){
-		this.debugMode = debugMode;
-	}
-	
-	public Player getPlayer(){
-		return player;
-	}
 	
 	public boolean incrementUpdateTick(){
 		return incrementUpdateTick;
@@ -3090,21 +3096,6 @@ public class CommandHandler{
 		if(restCounter < 0){
 			restCounter = 0;
 		}
-	}
-	
-	public void setSoundEnabled(boolean soundEnabled){
-		this.soundEnabled = soundEnabled;
-		sound.setSoundEnabled(soundEnabled);
-	}
-	
-	public boolean getSoundEnabled(){
-		return soundEnabled;
-	}
-	
-	public void setWindow(Window window){
-		this.window = window;
-		text.setWindow(window);
-		list.setWindow(window);
 	}
 	
 	public Enemy getLastEnemyKilled(){

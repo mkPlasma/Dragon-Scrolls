@@ -2,35 +2,25 @@ package game;
 
 import java.awt.Color;
 
-public class GameStart {
+public class GameStart{
 	
-	Text text = new Text();
 	Save save = new Save();
-	Player player = new Player();
 	
 	private boolean classChosenSuccessful = false;
-	private boolean debugMode = false;
-
-	private boolean waitEnabled = true;
-	private boolean soundEnabled = true;
 	
 	private Area area = null;
 	private Area[] accessibleAreas = null;
 	
 	boolean saveLoaded = false;
 	
-	public void start(Window window){
+	public void start(){
 		
-		text.setWindow(window);
-		save.setWindow(window);
-		player.setWindow(window);
+		Text.print("Welcome to ");
+		Text.print("Dragon Scrolls", new Color(96, 96, 0));
+		Text.print("!");
+		Text.printLine("Type \"start\"");
 		
-		text.print("Welcome to ");
-		text.print("Dragon Scrolls", new Color(96, 96, 0));
-		text.print("!");
-		text.printText("Type \"start\"");
-		
-		int stringChosen = text.testInput(new String[] {"start", "debug"});
+		int stringChosen = Text.testInput(new String[] {"start", "debug"});
 		
 		if(stringChosen == 0){
 			
@@ -53,28 +43,30 @@ public class GameStart {
 				
 				accessibleAreas = areaTemp.clone();
 				
-				player = save.readSave(save.getSaveLoaded());
+				save.readSave(save.getSaveLoaded());
 				classChosenSuccessful = true;
 				saveLoaded = true;
 			}
 		}
 		else if(stringChosen == 1){
-			waitEnabled = false;
+			Settings.setWaitEnabled(false);
+
+			new Player();
 			
-			player.setClassType(0);
-			player.setLevel(999);
-			player.setGold(99999);
+			Player.setClassType(0);
+			Player.setLevel(999);
+			Player.setGold(99999);
 			
-			player.setHealth(99999);
-			player.setMagic(99999);
+			Player.setHealth(99999);
+			Player.setMagic(99999);
 			
-			player.updatePlayer();
+			Player.updatePlayer();
 			
-			player.loadDefaultInventory();
+			Player.loadDefaultInventory();
 			
-			text.printText("Debug mode is active.");
+			Text.printLine("Debug mode is active.");
 			classChosenSuccessful = true;
-			debugMode = true;
+			Settings.setDebugEnabled(true);
 		}
 		else{
 			System.exit(0);
@@ -82,51 +74,51 @@ public class GameStart {
 	}
 	
 	private void waitSelect(){
-		text.printTextAddLine("Enable waiting?");
-		text.printYN();
-		text.printText(new String[]{"Waiting will create short pauses in the game for added effect.", "If waiting is off, all text will appear immediately."});
+		Text.printLineExtra("Enable waiting?");
+		Text.printYN();
+		Text.printLine(new String[]{"Waiting will create short pauses in the game for added effect.", "If waiting is off, all text will appear immediately."});
 		
 		while(true){
-			int stringChosen = text.testInput(new String[] {"yes", "y", "no", "n"});
+			int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 			
 			switch(stringChosen){
 				case 0: case 1:
-					text.printText("Waiting has been enabled.");
-					waitEnabled = true;
+					Text.printLine("Waiting has been enabled.");
+					Settings.setWaitEnabled(true);
 					return;
 				
 				case 2: case 3:
-					text.printText("Waiting has been disabled.");
-					waitEnabled = false;
+					Text.printLine("Waiting has been disabled.");
+					Settings.setWaitEnabled(false);
 					return;
 				
 				default:
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					break;
 			}
 		}
 	}
 	
 	private void soundSelect(){
-		text.printTextAddLine("Enable sounds?");
-		text.printYN();
+		Text.printLineExtra("Enable sounds?");
+		Text.printYN();
 		
 		while(true){
-			int stringChosen = text.testInput(new String[] {"yes", "y", "no", "n"});
+			int stringChosen = Text.testInput(new String[]{"yes", "y", "no", "n"});
 			
 			switch(stringChosen){
 				case 0: case 1:
-					text.printText("Sounds have been enabled.");
-					soundEnabled = true;
+					Text.printLine("Sounds have been enabled.");
+					Settings.setSoundEnabled(true);
 					return;
 				
 				case 2: case 3:
-					text.printText("Sounds have been disabled.");
-					soundEnabled = false;
+					Text.printLine("Sounds have been disabled.");
+					Settings.setSoundEnabled(false);
 					return;
 				
 				default:
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					break;
 			}
 		}
@@ -137,66 +129,66 @@ public class GameStart {
 		int classType = -1;
 		
 		do{
-			text.printTextAddLine(new String[]{"Select a class.", "Type its name for more info."});
-			text.printText("Knight", Color.DARK_GRAY);
-			text.printText("Archer", new Color(0, 128, 0));
-			text.printText("Mage", Color.BLUE);
+			Text.printLineExtra(new String[]{"Select a class.", "Type its name for more info."});
+			Text.printLine("Knight", Color.DARK_GRAY);
+			Text.printLine("Archer", new Color(0, 128, 0));
+			Text.printLine("Mage", Color.BLUE);
 	
-			int stringChosen = text.testInput(new String[] {"knight", "archer", "mage"});
+			int stringChosen = Text.testInput(new String[] {"knight", "archer", "mage"});
 			
 			switch(stringChosen){
 				case 0:
-					text.printText("Knight", Color.DARK_GRAY);
-					text.print(": The knight is a good fighter and a tank. He has plenty of health, but is lacking in magic. " +
+					Text.printLine("Knight", Color.DARK_GRAY);
+					Text.print(": The knight is a good fighter and a tank. He has plenty of health, but is lacking in magic. " +
 					"Because of his reliance on high damage and health, he is easy to start out with, but may not do as well later on.");
 					
-					text.printTextAddLine("Stats:");
-					text.printText("Starting HP: 200", Color.RED);
-					text.printText("Starting MP: 100", Color.BLUE);
-					text.printText("Starting DEF: 8", Color.DARK_GRAY);
+					Text.printLineExtra("Stats:");
+					Text.printLine("Starting HP: 200", Color.RED);
+					Text.printLine("Starting MP: 100", Color.BLUE);
+					Text.printLine("Starting DEF: 8", Color.DARK_GRAY);
 					
-					text.addLine();
-					text.printText(new String[]{"Attacks:", "Main: The knight uses a sword, which can do a lot of damage, however, it is easily avoided.",
+					Text.addLine();
+					Text.printLine(new String[]{"Attacks:", "Main: The knight uses a sword, which can do a lot of damage, however, it is easily avoided.",
 					"Special: The knight can use his shield to temporarily increase his defense."});
 					
 					classType = 0;
 					break;
 					
 				case 1:
-					text.printText("Archer", new Color(0, 128, 0));
-					text.print(": The archer is a well-rounded class with even health and magic. He is evenly focused and will do well throughout the adventure.");
+					Text.printLine("Archer", new Color(0, 128, 0));
+					Text.print(": The archer is a well-rounded class with even health and magic. He is evenly focused and will do well throughout the adventure.");
 					
-					text.printTextAddLine("Stats:");
-					text.printText("Starting HP: 150", Color.RED);
-					text.printText("Starting MP: 150", Color.BLUE);
-					text.printText("Starting DEF: 5", Color.DARK_GRAY);
+					Text.printLineExtra("Stats:");
+					Text.printLine("Starting HP: 150", Color.RED);
+					Text.printLine("Starting MP: 150", Color.BLUE);
+					Text.printLine("Starting DEF: 5", Color.DARK_GRAY);
 					
-					text.addLine();
-					text.printText(new String[]{"Attacks:", "Main: The archer uses a bow, which has low damage, but is difficult to avoid.",
+					Text.addLine();
+					Text.printLine(new String[]{"Attacks:", "Main: The archer uses a bow, which has low damage, but is difficult to avoid.",
 					"Special: The archer can use a power snipe his enemies with a high-damage, unvavoidable arrow."});
 	
 					classType = 1;
 					break;
 					
 				case 2:
-					text.printText("Mage", Color.BLUE);
-					text.print(": The mage is mainly focused on magic and spells. He has low health, but has plenty of buffs and debuffs at his fingertips. " +
+					Text.printLine("Mage", Color.BLUE);
+					Text.print(": The mage is mainly focused on magic and spells. He has low health, but has plenty of buffs and debuffs at his fingertips. " +
 					"Due to these stats, he is difficult to start with but gains tremendous power throughout the adventure.");
 					
-					text.printTextAddLine("Stats:");
-					text.printText("Starting HP: 100", Color.RED);
-					text.printText("Starting MP: 200", Color.BLUE);
-					text.printText("Starting DEF: 3", Color.DARK_GRAY);
+					Text.printLineExtra("Stats:");
+					Text.printLine("Starting HP: 100", Color.RED);
+					Text.printLine("Starting MP: 200", Color.BLUE);
+					Text.printLine("Starting DEF: 3", Color.DARK_GRAY);
 					
-					text.addLine();
-					text.printText(new String[]{"Attacks:", "Main: The mage uses a wand with medium damage and medium avoidability.",
+					Text.addLine();
+					Text.printLine(new String[]{"Attacks:", "Main: The mage uses a wand with medium damage and medium avoidability.",
 					"Special: The mage can cast spells which cause different effects on the enemy based on the spell."});
 	
 					classType = 2;
 					break;
 					
 				default:
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					classType = -1;
 					break;
 			}
@@ -208,8 +200,8 @@ public class GameStart {
 		if(classType == -1)
 			return false;
 		
-		text.printTextAddLine("Choose this class?");
-		text.printYN();
+		Text.printLineExtra("Choose this class?");
+		Text.printYN();
 		
 		boolean classChosen = false;
 		String className = "default";
@@ -230,21 +222,23 @@ public class GameStart {
 		
 		while(!classChosen){
 			
-			int stringChosen = text.testInput(new String[] {"yes", "y", "no", "n"});
+			int stringChosen = Text.testInput(new String[] {"yes", "y", "no", "n"});
 			
 			switch(stringChosen){
 				case 0: case 1:
-					text.printTextAddLine("You chose the " + className + ".");
+					Text.printLineExtra("You chose the " + className + ".");
 					
-					player.setClassType(classType);
-					player.setGold(100);
+					new Player();
 					
-					player.setHealth(200);
-					player.setMagic(200);
+					Player.setClassType(classType);
+					Player.setGold(100);
 					
-					player.updatePlayer();
+					Player.setHealth(200);
+					Player.setMagic(200);
 					
-					player.loadDefaultInventory();
+					Player.updatePlayer();
+					
+					Player.loadDefaultInventory();
 					
 					classChosenSuccessful = true;
 					classChosen = true;
@@ -252,12 +246,12 @@ public class GameStart {
 					return true;
 				
 				case 2: case 3:
-					text.printText("Choose another class.");
+					Text.printLine("Choose another class.");
 					classChosen = true;
 					return false;
 				
 				default:
-					text.printText("Input not recognized, please try again");
+					Text.printLine("Input not recognized, please try again");
 					break;
 			}
 		}
@@ -267,18 +261,6 @@ public class GameStart {
 	
 	public boolean getClassChosenSuccessful(){
 		return classChosenSuccessful;
-	}
-	
-	public boolean getWaitEnabled(){
-		return waitEnabled;
-	}
-	
-	public Player getPlayer(){
-		return player;
-	}
-	
-	public boolean getDebugMode(){
-		return debugMode;
 	}
 	
 	public Save getSave(){
@@ -295,9 +277,5 @@ public class GameStart {
 	
 	public boolean isSaveLoaded(){
 		return saveLoaded;
-	}
-	
-	public boolean getSoundEnabled(){
-		return soundEnabled;
 	}
 }

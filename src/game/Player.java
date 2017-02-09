@@ -5,382 +5,118 @@ import java.util.Random;
 
 public class Player{
 	
-	private final Random random = new Random();
+	private static final Random random = new Random();
 	
-	private final ObjectList list = new ObjectList();
-	private final Text text = new Text();
-	
-	private int classType = -1;
+	private static int classType = -1;
 	
 	
 	//Base max variables are "real" maximums
 	//Max variables include status effects
-	private int baseMaxHealth;
-	private int health;
-	private int maxHealth;
+	private static int baseMaxHealth;
+	private static int health;
+	private static int maxHealth;
 	
-	private int baseMaxMagic;
-	private int magic;
-	private int maxMagic;
+	private static int baseMaxMagic;
+	private static int magic;
+	private static int maxMagic;
 	
-	private int baseDefense;
-	private int defense;
+	private static int baseDefense;
+	private static int defense;
 	
-	private int gold;
+	private static int gold;
 	
-	private double damageMultiplier = 1.0;
+	private static double damageMultiplier = 1.0;
 	
-	private int level = 1;
-	private int xp = 0;
-	private int xpReq = 50;
+	private static int level = 1;
+	private static int xp = 0;
+	private static int xpReq = 50;
 	
-	private boolean playerAlive = true;
+	private static boolean playerAlive = true;
 	
-	private final Item emptyItem = new Item();
-	private final StatusEffect emptyEffect = new StatusEffect();
+	private static final Item emptyItem = new Item();
+	private static final StatusEffect emptyEffect = new StatusEffect();
 	
 	//0 - Normal Weapon
 	//1 - Special Weapon
 	//2 - Armor
 	//Others - Inventory
-	private Item[] inventory = new Item[23];
-	private int[] inventoryItemCount = new int[23];
+	private static Item[] inventory = new Item[23];
+	private static int[] inventoryItemCount = new int[23];
 	
-	private StatusEffect[] statusEffects = new StatusEffect[20];
+	private static StatusEffect[] statusEffects = new StatusEffect[20];
 	
 	public Player(){
 		Arrays.fill(inventory, emptyItem);
 		Arrays.fill(statusEffects, emptyEffect);
 	}
 	
-	public void setBaseMaxHealth(int baseMaxHealth){
-		this.baseMaxHealth = baseMaxHealth;
+	// Setters
+	
+	public static void setBaseMaxHealth(int baseMaxHealth){
+		Player.baseMaxHealth = baseMaxHealth;
 	}
 	
-	public void setHealth(int health){
-		this.health = health;
+	public static void setHealth(int health){
+		Player.health = health;
 		updatePlayer();
 	}
 	
-	public void setMaxHealth(int maxHealth){
-		this.maxHealth = maxHealth;
+	public static void setMaxHealth(int maxHealth){
+		Player.maxHealth = maxHealth;
 	}
 	
-	public void setBaseMaxMagic(int baseMaxMagic){
-		this.baseMaxMagic = baseMaxMagic;
+	public static void setBaseMaxMagic(int baseMaxMagic){
+		Player.baseMaxMagic = baseMaxMagic;
 	}
 	
-	public void setMagic(int magic){
-		this.magic = magic;
+	public static void setMagic(int magic){
+		Player.magic = magic;
 		updatePlayer();
 	}
 	
-	public void setMaxMagic(int maxMagic){
-		this.maxMagic = maxMagic;
+	public static void setMaxMagic(int maxMagic){
+		Player.maxMagic = maxMagic;
 	}
 	
-	public void setDefense(int defense){
-		this.defense = defense;
+	public static void setDefense(int defense){
+		Player.defense = defense;
 	}
 	
-	public void setGold(int gold){
-		this.gold = gold;
+	public static void setGold(int gold){
+		Player.gold = gold;
 	}
-	
-	public void setWindow(Window window){
-		text.setWindow(window);
+
+	public static void setClassType(int classType){
+		Player.classType = classType;
 	}
-	
-	
-	public int getBaseMaxHealth(){
-		return baseMaxHealth;
-	}
-	
-	public int getMaxHealth(){
-		return maxHealth;
-	}
-	
-	public int getHealth(){
-		return health;
-	}
-	
-	public int getBaseMaxMagic(){
-		return baseMaxMagic;
-	}
-	
-	public int getMaxMagic(){
-		return maxMagic;
-	}
-	
-	public int getMagic(){
-		return magic;
-	}
-	
-	public int getDefense(){
-		updatePlayer();
-		return defense;
-	}
-	
-	public int getGold(){
-		return gold;
-	}
-	
-	
-	public void setClassType(int classType){
-		this.classType = classType;
-	}
-	
-	public int getClassType(){
-		return classType;
-	}
-	
-	public double getDamageMultiplier(){
-		return damageMultiplier;
-	}
-	
-	public String getClassTypeName(){
-		switch(classType){
-			case -1:
-				return "default";
-				
-			case 0:
-				return "knight";
-			
-			case 1:
-				return "archer";
-			
-			case 2:
-				return "mage";
-			
-			default:
-				return "invalid";
-		}
-	}
-	
-	public void loadDefaultInventory(){
-		switch(classType){
-		case 0:
-			inventory[0] = list.getNormalWeaponItemList()[0];
-			inventory[1] = list.getSpecialWeaponItemList()[0];
-			inventory[2] = list.getArmorItemList()[0];
-			break;
-		
-		case 1:
-			inventory[0] = list.getNormalWeaponItemList()[16];
-			inventory[1] = list.getSpecialWeaponItemList()[16];
-			inventory[2] = list.getArmorItemList()[15];
-			break;
-		
-		case 2:
-			inventory[0] = list.getNormalWeaponItemList()[32];
-			inventory[1] = list.getSpecialWeaponItemList()[32];
-			inventory[2] = list.getArmorItemList()[30];
-			break;
-		}
-		
-		inventoryItemCount[0] = 1;
-		inventoryItemCount[1] = 1;
-		inventoryItemCount[2] = 1;
-		
-		baseDefense = inventory[2].getArmorStats()[0];
-		
-		inventory[3] = list.getConsumableItemList()[0];
-		inventoryItemCount[3] = 3;
-		
+
+	public static void setXP(int xp){
+		Player.xp = xp;
 		updatePlayer();
 	}
 	
-	public Item[] getInventory(){
-		return inventory;
+	public static void setXPReq(int xpReq){
+		Player.xpReq = xpReq;
+		updatePlayer();
 	}
 	
-	public int[] getInventoryItemCount(){
-		return inventoryItemCount;
+	public static void setLevel(int level){
+		Player.level = level;
+		updatePlayer();
 	}
 	
-	public void setInventory(Item[] inventory){
-		this.inventory = inventory;
+	
+	// Inventory
+	
+	public static void setInventory(Item[] inventory){
+		Player.inventory = inventory;
 	}
 	
-	public void setInventoryItemCount(int[] inventoryItemCount){
-		this.inventoryItemCount = inventoryItemCount;
+	public static void setInventoryItemCount(int[] inventoryItemCount){
+		Player.inventoryItemCount = inventoryItemCount;
 	}
-	
-	public Item getItemInInventorySlot(int slot){
-		return inventory[slot];
-	}
-	
-	public int getItemCountInInventorySlot(int slot){
-		return inventoryItemCount[slot];
-	}
-	
-	public int getItemCountInInventory(Item item){
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].getName().equals(item.getName())){
-				return inventoryItemCount[i];
-			}
-		}
-		
-		return -1;
-	}
-	
-	public boolean searchForItemInInventory(Item item, boolean searchEntireInventory){
-		
-		int iOffset = 3;
-		
-		if(searchEntireInventory){
-			iOffset = 0;
-		}
-		
-		for(int i = iOffset; i < inventory.length; i++){
-			if(inventory[i].getName().equals(item.getName()) && inventoryItemCount[i] > 0){
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public int getInventoryItemCount(Item item, boolean searchEntireInventory){
-		
-		int iOffset = 3;
-		
-		if(searchEntireInventory){
-			iOffset = 0;
-		}
-		
-		for(int i = iOffset; i < inventory.length; i++){
-			if(inventory[i].getName().equals(item.getName())){
-				return inventoryItemCount[i];
-			}
-		}
-		
-		return 0;
-	}
-	
-	public Item[] getTypeInInventory(int type, boolean searchEntireInventory){
-		
-		int iOffset = 3;
-		
-		if(searchEntireInventory){
-			iOffset = 0;
-		}
-		
-		int itemCount = 0;
-		
-		for(int i = iOffset; i < inventory.length - iOffset; i++){
-			if(inventory[i].getType() == type){
-				itemCount++;
-			}
-		}
-		
-		Item[] foundItems = new Item[itemCount];
-		int itemNum = 0;
-		
-		for(int i = iOffset; i < inventory.length - iOffset; i++){
-			if(inventory[i].getType() == type){
-				foundItems[itemNum] = inventory[i];
-				itemNum++;
-			}
-		}
-		
-		return foundItems;
-	}
-	
-	public Item[] getUsableItemsInInventory(){
-		
-		int itemCount = 0;
 
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].canUse()){
-				itemCount++;
-			}
-		}
-		
-		Item[] foundItems = new Item[itemCount];
-		int itemNum = 0;
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].canUse()){
-				foundItems[itemNum] = inventory[i];
-				itemNum++;
-			}
-		}
-		
-		return foundItems;
-	}
-	
-	public int[] getUsableItemCountInInventory(){
-		
-		int itemCount = 0;
-
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].canUse()){
-				itemCount++;
-			}
-		}
-		
-		int[] foundItems = new int[itemCount];
-		int itemNum = 0;
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].canUse()){
-				foundItems[itemNum] = inventoryItemCount[i];
-				itemNum++;
-			}
-		}
-		
-		return foundItems;
-	}
-	
-	public Item[] getEquipableItemsInInventory(){
-		
-		int itemCount = 0;
-
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].getType() == 0 || inventory[i].getType() == 1 || inventory[i].getType() == 2){
-				itemCount++;
-			}
-		}
-		
-		Item[] foundItems = new Item[itemCount];
-		int itemNum = 0;
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(inventory[i].getType() == 0 || inventory[i].getType() == 1 || inventory[i].getType() == 2){
-				foundItems[itemNum] = inventory[i];
-				itemNum++;
-			}
-		}
-		
-		return foundItems;
-	}
-	
-	public String[] getInventoryContentsInString(){
-		
-		int itemNum = 0;
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(!inventory[i].getName().equals(emptyItem.getName())){
-				itemNum++;
-			}
-		}
-
-		String[] foundItems = new String[itemNum];
-		
-		itemNum = 0;
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(!inventory[i].getName().equals(emptyItem.getName())){
-				foundItems[itemNum] = inventory[i].getName();
-				itemNum++;
-			}
-		}
-		
-		return foundItems;
-	}
-	
-	public void setInventorySpace(int space){
+	public static void setInventorySpace(int space){
 		
 		Item[] tempInventory = inventory.clone();
 		int[] tempInventoryItemCount = inventoryItemCount.clone();
@@ -411,7 +147,380 @@ public class Player{
 		}
 	}
 	
-	public void addItemToInventory(Item item){
+	
+	
+	
+	
+	// Getters
+	
+	public static int getBaseMaxHealth(){
+		return baseMaxHealth;
+	}
+	
+	public static int getMaxHealth(){
+		return maxHealth;
+	}
+	
+	public static int getHealth(){
+		return health;
+	}
+	
+	public static int getBaseMaxMagic(){
+		return baseMaxMagic;
+	}
+	
+	public static int getMaxMagic(){
+		return maxMagic;
+	}
+	
+	public static int getMagic(){
+		return magic;
+	}
+	
+	public static int getDefense(){
+		updatePlayer();
+		return defense;
+	}
+	
+	public static int getGold(){
+		return gold;
+	}
+	
+	public static int getClassType(){
+		return classType;
+	}
+	
+	public static double getDamageMultiplier(){
+		return damageMultiplier;
+	}
+	
+	public static String getClassTypeName(){
+		switch(classType){
+			case -1:
+				return "default";
+				
+			case 0:
+				return "knight";
+			
+			case 1:
+				return "archer";
+			
+			case 2:
+				return "mage";
+			
+			default:
+				return "invalid";
+		}
+	}
+
+	public static int getXP(){
+		return xp;
+	}
+	
+	public static int getXPReq(){
+		return xpReq;
+	}
+	
+	public static int getLevel(){
+		return level;
+	}
+	
+	public static boolean getRandomHitFail(){
+
+		int level = getStatusEffectLevel(18);
+		
+		if(level > 0 && random.nextInt(99) + 1 <= level*5){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	//Inventory
+
+	public static Item[] getInventory(){
+		return inventory;
+	}
+	
+	public static int[] getInventoryItemCount(){
+		return inventoryItemCount;
+	}
+	
+	public static Item getItemInInventorySlot(int slot){
+		return inventory[slot];
+	}
+	
+	public static int getItemCountInInventorySlot(int slot){
+		return inventoryItemCount[slot];
+	}
+	
+	public static int getItemCountInInventory(Item item){
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].getName().equals(item.getName())){
+				return inventoryItemCount[i];
+			}
+		}
+		
+		return -1;
+	}
+
+	public static int getInventoryItemCount(Item item, boolean searchEntireInventory){
+		
+		int iOffset = 3;
+		
+		if(searchEntireInventory){
+			iOffset = 0;
+		}
+		
+		for(int i = iOffset; i < inventory.length; i++){
+			if(inventory[i].getName().equals(item.getName())){
+				return inventoryItemCount[i];
+			}
+		}
+		
+		return 0;
+	}
+	
+	public static Item[] getTypeInInventory(int type, boolean searchEntireInventory){
+		
+		int iOffset = 3;
+		
+		if(searchEntireInventory){
+			iOffset = 0;
+		}
+		
+		int itemCount = 0;
+		
+		for(int i = iOffset; i < inventory.length - iOffset; i++){
+			if(inventory[i].getType() == type){
+				itemCount++;
+			}
+		}
+		
+		Item[] foundItems = new Item[itemCount];
+		int itemNum = 0;
+		
+		for(int i = iOffset; i < inventory.length - iOffset; i++){
+			if(inventory[i].getType() == type){
+				foundItems[itemNum] = inventory[i];
+				itemNum++;
+			}
+		}
+		
+		return foundItems;
+	}
+	
+	public static Item[] getUsableItemsInInventory(){
+		
+		int itemCount = 0;
+
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].canUse()){
+				itemCount++;
+			}
+		}
+		
+		Item[] foundItems = new Item[itemCount];
+		int itemNum = 0;
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].canUse()){
+				foundItems[itemNum] = inventory[i];
+				itemNum++;
+			}
+		}
+		
+		return foundItems;
+	}
+	
+	public static int[] getUsableItemCountInInventory(){
+		
+		int itemCount = 0;
+
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].canUse()){
+				itemCount++;
+			}
+		}
+		
+		int[] foundItems = new int[itemCount];
+		int itemNum = 0;
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].canUse()){
+				foundItems[itemNum] = inventoryItemCount[i];
+				itemNum++;
+			}
+		}
+		
+		return foundItems;
+	}
+	
+	public static Item[] getEquipableItemsInInventory(){
+		
+		int itemCount = 0;
+
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].getType() == 0 || inventory[i].getType() == 1 || inventory[i].getType() == 2){
+				itemCount++;
+			}
+		}
+		
+		Item[] foundItems = new Item[itemCount];
+		int itemNum = 0;
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(inventory[i].getType() == 0 || inventory[i].getType() == 1 || inventory[i].getType() == 2){
+				foundItems[itemNum] = inventory[i];
+				itemNum++;
+			}
+		}
+		
+		return foundItems;
+	}
+	
+	public static String[] getInventoryContentsInString(){
+		
+		int itemNum = 0;
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(!inventory[i].getName().equals(emptyItem.getName())){
+				itemNum++;
+			}
+		}
+
+		String[] foundItems = new String[itemNum];
+		
+		itemNum = 0;
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(!inventory[i].getName().equals(emptyItem.getName())){
+				foundItems[itemNum] = inventory[i].getName();
+				itemNum++;
+			}
+		}
+		
+		return foundItems;
+	}
+
+	public static boolean isInventoryFull(){
+		
+		int itemNum = 0;
+		
+		for(int i = 3; i < inventory.length; i++){
+			if(!inventory[i].getName().equals(emptyItem.getName())){
+				itemNum++;
+			}
+		}
+		
+		if(itemNum == inventory.length){
+			return true;
+		}
+		
+		return false;
+	}
+	
+	
+	//Status Effects
+	
+	public static StatusEffect[] getStatusEffects(){
+		return statusEffects;
+	}
+	
+	public static boolean hasStatusEffect(int effect){
+		
+		for(int i = 0; i < statusEffects.length; i++){
+			if(statusEffects[i].getType() == effect){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public static boolean hasStatusEffects(){
+		
+		for(int i = 0; i < statusEffects.length; i++){
+			if(statusEffects[i].getType() != 0){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+	
+	public static int getStatusEffectLevel(int effect){
+		
+		for(int i = 0; i < statusEffects.length; i++){
+			if(statusEffects[i].getType() == effect){
+				return statusEffects[i].getLevel();
+			}
+		}
+		
+		return -1;
+	}
+
+	public static boolean isImmuneToStatusEffect(StatusEffect statusEffect){
+		return inventory[2].isImmuneToStatusEffect(statusEffect);
+	}
+	
+	
+	
+	
+	// Other Inventory Functions
+	
+	public static void loadDefaultInventory(){
+		switch(classType){
+		case 0:
+			inventory[0] = ObjectList.getNormalWeaponItemList()[0];
+			inventory[1] = ObjectList.getSpecialWeaponItemList()[0];
+			inventory[2] = ObjectList.getArmorItemList()[0];
+			break;
+		
+		case 1:
+			inventory[0] = ObjectList.getNormalWeaponItemList()[16];
+			inventory[1] = ObjectList.getSpecialWeaponItemList()[16];
+			inventory[2] = ObjectList.getArmorItemList()[15];
+			break;
+		
+		case 2:
+			inventory[0] = ObjectList.getNormalWeaponItemList()[32];
+			inventory[1] = ObjectList.getSpecialWeaponItemList()[32];
+			inventory[2] = ObjectList.getArmorItemList()[30];
+			break;
+		}
+		
+		inventoryItemCount[0] = 1;
+		inventoryItemCount[1] = 1;
+		inventoryItemCount[2] = 1;
+		
+		baseDefense = inventory[2].getArmorStats()[0];
+		
+		inventory[3] = ObjectList.getConsumableItemList()[0];
+		inventoryItemCount[3] = 3;
+		
+		updatePlayer();
+	}
+	
+	public static boolean searchForItemInInventory(Item item, boolean searchEntireInventory){
+		
+		int iOffset = 3;
+		
+		if(searchEntireInventory){
+			iOffset = 0;
+		}
+		
+		for(int i = iOffset; i < inventory.length; i++){
+			if(inventory[i].getName().equals(item.getName()) && inventoryItemCount[i] > 0){
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public static void addItemToInventory(Item item){
 		
 		for(int i = 3; i < inventory.length; i++){
 			if(inventory[i].getName().equals(item.getName()) && inventoryItemCount[i] < item.getMaxStack()){
@@ -429,19 +538,26 @@ public class Player{
 		}
 	}
 	
-	public void removeItemFromInventory(Item item){
+	public static void removeItemFromInventory(Item item){
 		for(int i = 3; i < inventory.length; i++){
 			if(inventory[i].getName().equals(item.getName()) && inventoryItemCount[i] > 0){
 				inventoryItemCount[i] -= 1;
 				
 				if(inventoryItemCount[i] == 0){
 					inventory[i] = emptyItem;
+					
+					for(int j = i; j < inventory.length - 1; j++){
+						inventory[j] = inventory[j + 1];
+						inventoryItemCount[j] = inventoryItemCount[j + 1];
+					}
+						
+					inventory[inventory.length - 1] = emptyItem;
 				}
 			}
 		}
 	}
 	
-	public void switchItemsInInventory(Item item, int slot){
+	public static void switchItemsInInventory(Item item, int slot){
 		for(int i = 0; i < inventory.length; i++){
 			if(inventory[i].getName().equals(item.getName())){
 				Item tempItem = inventory[slot];
@@ -457,7 +573,7 @@ public class Player{
 		updatePlayer();
 	}
 	
-	public void switchItemsInInventory(Item item, Item itemToSwitch){
+	public static void switchItemsInInventory(Item item, Item itemToSwitch){
 		
 		int slot = 0;
 		boolean itemFound = false;
@@ -484,24 +600,7 @@ public class Player{
 		updatePlayer();
 	}
 	
-	public boolean isInventoryFull(){
-		
-		int itemNum = 0;
-		
-		for(int i = 3; i < inventory.length; i++){
-			if(!inventory[i].getName().equals(emptyItem.getName())){
-				itemNum++;
-			}
-		}
-		
-		if(itemNum == inventory.length){
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public int getOpenInventorySlots(){
+	public static int getOpenInventorySlots(){
 		
 		int itemNum = 0;
 		
@@ -514,7 +613,7 @@ public class Player{
 		return itemNum;
 	}
 	
-	public int getOpenInventorySlots(Item item){
+	public static int getOpenInventorySlots(Item item){
 		
 		int itemNum = 0;
 		
@@ -532,11 +631,7 @@ public class Player{
 		return itemNum;
 	}
 	
-	public boolean isPlayerAlive(){
-		return playerAlive;
-	}
-	
-	public void addStatusEffect(StatusEffect statusEffect){
+	public static void addStatusEffect(StatusEffect statusEffect){
 		
 		for(int i = 0; i < statusEffects.length; i++){
 			if(statusEffects[i].getType() == emptyEffect.getType() || statusEffects[i].getType() == statusEffect.getType()){
@@ -556,7 +651,9 @@ public class Player{
 		}
 	}
 	
-	public void updatePlayer(){
+	
+	// Misc functions
+	public static void updatePlayer(){
 		
 		baseDefense = inventory[2].getArmorStats()[0];
 		defense = baseDefense;
@@ -597,13 +694,13 @@ public class Player{
 		maxHealth = baseMaxHealth + inventory[2].getArmorStats()[1];
 		maxMagic = baseMaxMagic + inventory[2].getArmorStats()[2];
 		
-		if(health > maxHealth){
+		if(health > maxHealth)
 			health = maxHealth;
-		}
 		
-		if(magic > maxMagic){
+		if(magic > maxMagic)
 			magic = maxMagic;
-		}
+		else if(magic < 0)
+			magic = 0;
 		
 		if(health <= 0){
 			playerAlive = false;
@@ -615,40 +712,41 @@ public class Player{
 		updateStatusEffects(false);
 	}
 	
-	public void addXP(int xp){
+	
+	public static boolean isPlayerAlive(){
+		return playerAlive;
+	}
+	
+	
+	public static void addXP(int xp){
 		
-		this.xp += xp;
+		Player.xp += xp;
 		updatePlayer();
 	}
+
 	
-	public void setXP(int xp){
-		this.xp = xp;
+	public static void restoreStats(){
+		
 		updatePlayer();
+		
+		health += baseMaxHealth/(5 + (classType*2));
+		magic += baseMaxMagic/(9 - (classType*3));
+		
+		if(health > maxHealth)
+			health = maxHealth;
+		
+		if(magic > maxMagic)
+			magic = maxMagic;
 	}
 	
-	public void setXPReq(int xpReq){
-		this.xpReq = xpReq;
-		updatePlayer();
-	}
 	
-	public void setLevel(int level){
-		this.level = level;
-		updatePlayer();
-	}
+	// Status Effect Functions
 	
-	public int getXP(){
-		return xp;
-	}
-	
-	public int getXPReq(){
-		return xpReq;
-	}
-	
-	public int getLevel(){
-		return level;
-	}
-	
-	public StatusEffect[] updateStatusEffects(boolean fullUpdate){
+	public static StatusEffect[] updateStatusEffects(boolean fullUpdate){
+		
+		// Full Update will modify health, magic, and other values
+		//
+		// Otherwise, max health, max magic, and defense are updated without reducing effect time
 		
 		StatusEffect[] endedEffects = new StatusEffect[20];
 		Arrays.fill(endedEffects, emptyEffect);
@@ -667,146 +765,88 @@ public class Player{
 			}
 			
 			switch(statusEffects[i].getType()){
-			case 1:
-				if(fullUpdate){
-					health += statusEffects[i].getLevel();
-					text.printText("You were healed by " + Integer.toString(statusEffects[i].getLevel()) + " from your regeneration effect!");
-				}
-				break;
-			
-			case 2:
-				if(fullUpdate){
-					magic += statusEffects[i].getLevel();
-					text.printText("Your magic was restored by " + Integer.toString(statusEffects[i].getLevel()) + " from your regeneration effect!");
-				}
-				break;
-			
-			case 3:
-				defense = baseDefense + statusEffects[i].getLevel();
-				break;
-			
-			case 4:
-				damageMultiplier += (0.05*statusEffects[i].getLevel());
-				break;
-
-			case 8: case 9:
-				if(fullUpdate){
-					health -= statusEffects[i].getLevel();
-
-					if(statusEffects[i].getType() == 8){
-						text.printText("You took " + Integer.toString(statusEffects[i].getLevel()) + " damage from bleeding!");
+				case 1:
+					if(fullUpdate){
+						health += statusEffects[i].getLevel();
+						Text.printLine("You were healed by " + Integer.toString(statusEffects[i].getLevel()) + " from your regeneration effect!");
 					}
-					else{
-						text.printText("You took " + Integer.toString(statusEffects[i].getLevel()) + " damage from burning!");
-					}
-				}
+					break;
 				
-				break;
-			
-			case 10: case 12:
-				if(fullUpdate){
-					magic -= statusEffects[i].getLevel();
-
-					if(statusEffects[i].getType() == 10){
-						text.printText("Your magic was drained by " + Integer.toString(statusEffects[i].getLevel()) + " from being poisoned!");
+				case 2:
+					if(fullUpdate){
+						magic += statusEffects[i].getLevel();
+						Text.printLine("Your magic was restored by " + Integer.toString(statusEffects[i].getLevel()) + " from your regeneration effect!");
 					}
-					else{
-						text.printText(Integer.toString(statusEffects[i].getLevel()) + " of your magic was stolen!");
-					}
-				}
+					break;
 				
-				break;
-			
-			case 11:
-				damageMultiplier -= (0.05*statusEffects[i].getLevel());
-				break;
-			
-			case 13:
-				defense = baseDefense - statusEffects[i].getLevel();
-				break;
-			
-			case 14:
-				maxHealth = baseMaxHealth + inventory[2].getArmorStats()[1] + statusEffects[i].getLevel();
-				break;
-			
-			case 15:
-				maxMagic = baseMaxMagic + inventory[2].getArmorStats()[2] + statusEffects[i].getLevel();
-				break;
-			
-			case 16:
-				maxHealth = baseMaxHealth + inventory[2].getArmorStats()[1] - statusEffects[i].getLevel();
-				break;
-			
-			case 17:
-				maxMagic = baseMaxMagic + inventory[2].getArmorStats()[2] - statusEffects[i].getLevel();
-				break;
+				case 3:
+					defense = baseDefense + statusEffects[i].getLevel();
+					break;
+				
+				case 4:
+					damageMultiplier += (0.05*statusEffects[i].getLevel());
+					break;
+	
+				case 8: case 9:
+					if(fullUpdate){
+						health -= statusEffects[i].getLevel();
+	
+						if(statusEffects[i].getType() == 8){
+							Text.printLine("You took " + Integer.toString(statusEffects[i].getLevel()) + " damage from bleeding!");
+						}
+						else{
+							Text.printLine("You took " + Integer.toString(statusEffects[i].getLevel()) + " damage from burning!");
+						}
+					}
+					
+					break;
+				
+				case 10: case 12:
+					if(fullUpdate){
+						magic -= statusEffects[i].getLevel();
+	
+						if(statusEffects[i].getType() == 10){
+							Text.printLine("Your magic was drained by " + Integer.toString(statusEffects[i].getLevel()) + " from being poisoned!");
+						}
+						else{
+							Text.printLine(Integer.toString(statusEffects[i].getLevel()) + " of your magic was stolen!");
+						}
+					}
+					
+					break;
+				
+				case 11:
+					damageMultiplier -= (0.05*statusEffects[i].getLevel());
+					break;
+				
+				case 13:
+					defense = baseDefense - statusEffects[i].getLevel();
+					break;
+				
+				case 14:
+					maxHealth = baseMaxHealth + inventory[2].getArmorStats()[1] + statusEffects[i].getLevel();
+					break;
+				
+				case 15:
+					maxMagic = baseMaxMagic + inventory[2].getArmorStats()[2] + statusEffects[i].getLevel();
+					break;
+				
+				case 16:
+					maxHealth = baseMaxHealth + inventory[2].getArmorStats()[1] - statusEffects[i].getLevel();
+					break;
+				
+				case 17:
+					maxMagic = baseMaxMagic + inventory[2].getArmorStats()[2] - statusEffects[i].getLevel();
+					break;
 			}
 		}
 		
 		return endedEffects;
 	}
 	
-	public void updateStats(){
-		
-		updatePlayer();
-		
-		health += baseMaxHealth/(20 + (classType*5));
-		magic += baseMaxMagic/(30 - (classType*5));
+	
+	public static void setStatusEffects(StatusEffect[] statusEffects){
+		Player.statusEffects = statusEffects;
 	}
 	
-	public void setStatusEffects(StatusEffect[] statusEffects){
-		this.statusEffects = statusEffects;
-	}
-	
-	public StatusEffect[] getStatusEffects(){
-		return statusEffects;
-	}
-	
-	public boolean hasStatusEffect(int effect){
-		
-		for(int i = 0; i < statusEffects.length; i++){
-			if(statusEffects[i].getType() == effect){
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	public boolean hasStatusEffects(){
-		
-		for(int i = 0; i < statusEffects.length; i++){
-			if(statusEffects[i].getType() != 0){
-				return true;
-			}
-		}
-		
-		return false;
-	}
-	
-	public int getStatusEffectLevel(int effect){
-		
-		for(int i = 0; i < statusEffects.length; i++){
-			if(statusEffects[i].getType() == effect){
-				return statusEffects[i].getLevel();
-			}
-		}
-		
-		return -1;
-	}
-	
-	public boolean getRandomHitFail(){
-
-		int level = getStatusEffectLevel(18);
-		
-		if(level > 0 && random.nextInt(99) + 1 <= level*5){
-			return true;
-		}
-		
-		return false;
-	}
-	
-	public boolean isImmuneToStatusEffect(StatusEffect statusEffect){
-		return inventory[2].isImmuneToStatusEffect(statusEffect);
-	}
 }

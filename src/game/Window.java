@@ -15,23 +15,20 @@ import javax.swing.JTextPane;
 import javax.swing.border.LineBorder;
 import javax.swing.text.DefaultCaret;
 
-public class Window extends JFrame implements ActionListener, Runnable{
+public class Window extends JFrame implements ActionListener{
 	
-	Thread thread;
+	private Thread thread;
 	
 	private boolean running = false;
-	
-	private final KeyboardListener keyboardListener;
-	
 	private final Color borderColor = new Color(122, 138, 153);
 	
-	private JTextPane textOutput;
+	private static JTextPane textOutput;
 	private JTextArea textInput;
 	private JScrollPane textScroll;
 	private JButton bSend;
 	
-	private boolean buttonPressed = false;
-	private String input = "";
+	private static boolean buttonPressed = false;
+	private static String input = "";
 
 	private String[] inputHistory = new String[32];
 	private int historyPosition = -1;
@@ -42,8 +39,7 @@ public class Window extends JFrame implements ActionListener, Runnable{
 		setLocationRelativeTo(null);
 		setLayout(new FlowLayout());
 		setResizable(false);
-		
-		keyboardListener = new KeyboardListener();
+		setSize(600, 450);
 		
 		textOutput = new JTextPane();
 		textOutput.setEditable(false);
@@ -60,7 +56,7 @@ public class Window extends JFrame implements ActionListener, Runnable{
 		textInput.setBorder(new LineBorder(borderColor, 1));
 		textInput.setPreferredSize(new Dimension(500, 50));
 		textInput.setMaximumSize(new Dimension(500, 50));
-		textInput.addKeyListener(keyboardListener);
+		textInput.addKeyListener(new KeyboardListener());
 		add(textInput);
 		
 		bSend = new JButton("Send");
@@ -72,56 +68,57 @@ public class Window extends JFrame implements ActionListener, Runnable{
 		add(bSend);
 		
 		Arrays.fill(inputHistory, "");
-		
+
+		setVisible(true);
 		startThread();
 	}
 	
 	public void startThread(){
-		thread = new Thread(this);
+		thread = new Thread(new Runnable(){
+			public void run(){
+			
+			running = true;
+			
+			while(running){
+				
+				if(textInput.getText().length() > 64){
+					textInput.setText(textInput.getText().substring(0, 64));
+				}
+				
+				if(KeyboardListener.sendText()){
+					KeyboardListener.resetEnter();
+					sendText();
+				}
+				
+				if(KeyboardListener.isUpHeld() && historyPosition < 31
+				&& (historyPosition == -1 || historyPosition == 31 || inputHistory[historyPosition + 1] != "")){
+					historyPosition += 1;
+					textInput.setText(inputHistory[historyPosition]);
+					KeyboardListener.resetArrowKeys();
+				}
+				
+				if(KeyboardListener.isDownHeld() && historyPosition > -1){
+					historyPosition -= 1;
+					
+					if(historyPosition >= 0){
+						textInput.setText(inputHistory[historyPosition]);
+					}
+					else{
+						textInput.setText("");
+					}
+
+					KeyboardListener.resetArrowKeys();
+				}
+				
+				try{
+					Thread.sleep(1);
+				}
+				catch(Exception e){}
+			}
+		}});
 		thread.start();
 	}
 	
-	public void run(){
-		
-		running = true;
-		
-		while(running){
-			
-			if(textInput.getText().length() > 64){
-				textInput.setText(textInput.getText().substring(0, 64));
-			}
-			
-			if(keyboardListener.sendText()){
-				keyboardListener.resetEnter();
-				sendText();
-			}
-			
-			if(keyboardListener.isUpHeld() && historyPosition < 31
-			&& (historyPosition == -1 || historyPosition == 31 || inputHistory[historyPosition + 1] != "")){
-				historyPosition += 1;
-				textInput.setText(inputHistory[historyPosition]);
-				keyboardListener.resetArrowKeys();
-			}
-			
-			if(keyboardListener.isDownHeld() && historyPosition > -1){
-				historyPosition -= 1;
-				
-				if(historyPosition >= 0){
-					textInput.setText(inputHistory[historyPosition]);
-				}
-				else{
-					textInput.setText("");
-				}
-
-				keyboardListener.resetArrowKeys();
-			}
-			
-			try{
-				thread.sleep(1);
-			}
-			catch(Exception e){}
-		}
-	}
 	
 	public void actionPerformed(ActionEvent e){
 		if(e.getActionCommand().equals("send")){
@@ -156,19 +153,19 @@ public class Window extends JFrame implements ActionListener, Runnable{
 		return textOutput.getText();
 	}
 	
-	public JTextPane getTextOutput(){
+	public static JTextPane getTextOutput(){
 		return textOutput;
 	}
 	
-	public boolean getButtonPressed(){
+	public static boolean getButtonPressed(){
 		return buttonPressed;
 	}
 	
-	public String getInput(){
+	public static String getInput(){
 		return input;
 	}
 	
-	public void resetButton(){
+	public static void resetButton(){
 		buttonPressed = false;
 	}
 }

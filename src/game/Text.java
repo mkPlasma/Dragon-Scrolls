@@ -10,15 +10,9 @@ import javax.swing.text.StyleConstants;
 
 public class Text{
 	
-	private String lastInput = "";
+	private static String lastInput = "";
 	
-	private Window window;
-	
-	public void setWindow(Window window){
-		this.window = window;
-	}
-	
-	public String getInput(){
+	public static String getInput(){
 		
 		do{
 			try{
@@ -26,26 +20,26 @@ public class Text{
 			}
 			catch(InterruptedException e){}
 		}
-		while(!window.getButtonPressed());
+		while(!Window.getButtonPressed());
 		
 		try{
 			TimeUnit.NANOSECONDS.sleep(1);
 		}
 		catch(InterruptedException e){}
 		
-		String input = window.getInput();
+		String input = Window.getInput();
 		
-		window.resetButton();
-		printText(input);
+		Window.resetButton();
+		printLine(input);
 		
 		return input;
 	}
 	
-	public void print(String output, Color color){
+	public static void print(String output, Color color){
 		SimpleAttributeSet attrib = new SimpleAttributeSet();
 		StyleConstants.setForeground(attrib, color);
 
-		Document document = window.getTextOutput().getStyledDocument();
+		Document document = Window.getTextOutput().getStyledDocument();
 		
 		try{
 			document.insertString(document.getLength(), output, attrib);
@@ -53,11 +47,11 @@ public class Text{
 		catch(BadLocationException e){}
 	}
 	
-	public void print(String output){
+	public static void print(String output){
 		SimpleAttributeSet attrib = new SimpleAttributeSet();
 		StyleConstants.setForeground(attrib, Color.BLACK);
 		
-		Document document = window.getTextOutput().getStyledDocument();
+		Document document = Window.getTextOutput().getStyledDocument();
 		
 		try{
 			document.insertString(document.getLength(), output, attrib);
@@ -65,31 +59,31 @@ public class Text{
 		catch(BadLocationException e){}
 	}
 	
-	public void printText(String output){
+	public static void printLine(String output){
 		print(System.lineSeparator() + output);
 	}
 	
-	public void printText(String output, Color color){
+	public static void printLine(String output, Color color){
 		print(System.lineSeparator() + output, color);
 	}
 	
-	public void printText(String[] output){
+	public static void printLine(String[] output){
 		for(int i = 0; i < output.length; i++){
 			print(System.lineSeparator() + output[i]);
 		}
 	}
 	
-	public void printText(String[] output, Color color){
+	public static void printLine(String[] output, Color color){
 		for(int i = 0; i < output.length; i++){
 			print(System.lineSeparator() + output[i], color);
 		}
 	}
 	
-	public void printTextAddLine(String output){
+	public static void printLineExtra(String output){
 		print(System.lineSeparator() + System.lineSeparator() + output);
 	}
 	
-	public void printTextAddLine(String[] output){
+	public static void printLineExtra(String[] output){
 		for(int i = 0; i < output.length; i++){
 			if(i == 0){
 				print(System.lineSeparator());
@@ -99,11 +93,11 @@ public class Text{
 		}
 	}
 	
-	public void addLine(){
+	public static void addLine(){
 		print(System.lineSeparator());
 	}
 	
-	public void printYN(){
+	public static void printYN(){
 		print(" (");
 		print("Y", new Color(0, 92, 0));
 		print("/");
@@ -111,13 +105,13 @@ public class Text{
 		print(")");
 	}
 	
-	public String testInput(){
+	public static String testInput(){
 		String input = getInput().toLowerCase();
 		lastInput = input;
 		return input;
 	}
 	
-	public int testInput(String[] acceptedInput){
+	public static int testInput(String[] acceptedInput){
 		
 		String input = getInput().trim();
 		lastInput = input;
@@ -131,7 +125,7 @@ public class Text{
 		return -1;
 	}
 	
-	public int testInput(String input, String[] acceptedInput){
+	public static int testInput(String input, String[] acceptedInput){
 		
 		for(int i = 0; i < acceptedInput.length; i++){
 			if(input.trim().equalsIgnoreCase(acceptedInput[i])){
@@ -142,7 +136,7 @@ public class Text{
 		return -1;
 	}
 	
-	public boolean canTrim(String str){
+	public static boolean canTrim(String str){
 		
 		str = str.trim();
 		String newString = str;
@@ -163,7 +157,7 @@ public class Text{
 		return canTrim;
 	}
 	
-	public String trimFromSpace(String str){
+	public static String trimFromSpace(String str){
 		
 		str = str.trim();
 		String newString = "";
@@ -176,7 +170,7 @@ public class Text{
 		return newString;
 	}
 	
-	public String trimToSpace(String str){
+	public static String trimToSpace(String str){
 
 		str = str.trim();
 		String newString = "";
@@ -189,7 +183,7 @@ public class Text{
 		return newString;
 	}
 	
-	public String getLastInput(){
+	public static String getLastInput(){
 		return lastInput;
 	}
 }

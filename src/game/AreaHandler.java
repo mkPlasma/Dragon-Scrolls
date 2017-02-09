@@ -2,18 +2,18 @@ package game;
 
 public class AreaHandler {
 	
-	Area[] accessibleAreas;
-	Area area;
+	private static Area[] accessibleAreas;
+	private static Area area;
 	
-	public void setArea(Area area){
-		this.area = area;
+	public static void setArea(Area area){
+		AreaHandler.area = area;
 	}
 	
-	public Area getArea(){
+	public static Area getArea(){
 		return area;
 	}
 	
-	public void setWaitEnabled(boolean waitEnabled){
+	public static void setWaitEnabled(boolean waitEnabled){
 		area.setWaitEnabled(waitEnabled);
 		
 		for(int i = 0; i < accessibleAreas.length; i++){
@@ -21,7 +21,7 @@ public class AreaHandler {
 		}
 	}
 	
-	public void addAccessibleArea(Area area){
+	public static void addAccessibleArea(Area area){
 		
 		Area[] areaTemp = new Area[accessibleAreas.length + 1];
 		
@@ -34,7 +34,7 @@ public class AreaHandler {
 		accessibleAreas = areaTemp.clone();
 	}
 	
-	public boolean isAreaAccessible(Area area){
+	public static boolean isAreaAccessible(Area area){
 		for(int i = 0; i < accessibleAreas.length; i++){
 			if(accessibleAreas[i].getName().equalsIgnoreCase(area.getName())){
 				return true;
@@ -44,11 +44,11 @@ public class AreaHandler {
 		return false;
 	}
 	
-	public void setAccessibleAreas(Area[] accessibleAreas){
-		this.accessibleAreas = accessibleAreas;
+	public static void setAccessibleAreas(Area[] accessibleAreas){
+		AreaHandler.accessibleAreas = accessibleAreas;
 	}
 	
-	public Area[] getAccessibleAreas(){
+	public static Area[] getAccessibleAreas(){
 		return accessibleAreas;
 	}
 }

@@ -1,35 +1,25 @@
 package game;
 
 import java.awt.Color;
-import java.util.Random;
 
 public class GameHandler{
 	
-	Random random = new Random();
+	private GameStart gameStart;
 	
-	GameStart gameStart = new GameStart();
-	Text text = new Text();
-	ObjectList list = new ObjectList();
-	Save save = new Save();
-	Window window;
+	private CommandHandler commandHandler = new CommandHandler();
 	
-	CommandHandler commandHandler = new CommandHandler();
-	AreaHandler areaHandler = new AreaHandler();
+	private Save save;
 	
-	Player player = new Player();
+	private boolean tutorialComplete = false;
 	
-	boolean tutorialComplete = false;
+	private int gameTicks = 0;
 	
-	int gameTicks = 0;
+	private int prevUpdateTicks = -1;
+	private int updateTicks = 0;
 	
-	int prevUpdateTicks = -1;
-	int updateTicks = 0;
-	
-	public void start(Window window){
-		
-		this.window = window;
-		text.setWindow(window);
-		gameStart.start(window);
+	public void start(){
+		gameStart = new GameStart();
+		gameStart.start();
 		
 		if(gameStart.getClassChosenSuccessful()){
 			startMainGame();
@@ -46,55 +36,44 @@ public class GameHandler{
 		
 		commandHandler.setSave(save);
 		
-		player = gameStart.getPlayer();
-		
 		if(gameStart.isSaveLoaded()){
-			areaHandler.setArea(gameStart.getArea());
-			areaHandler.setAccessibleAreas(gameStart.getAccessibleAreas());
+			AreaHandler.setArea(gameStart.getArea());
+			AreaHandler.setAccessibleAreas(gameStart.getAccessibleAreas());
 			tutorialComplete = save.readTutorial(save.getSaveLoaded());
 		}
 		else{
-			areaHandler.setArea(list.getAreaList()[1]);
-			areaHandler.setAccessibleAreas(new Area[] {list.getAreaList()[1]});
+			AreaHandler.setArea(ObjectList.getAreaList()[1]);
+			AreaHandler.setAccessibleAreas(new Area[] {ObjectList.getAreaList()[1]});
 			
-			if(gameStart.getDebugMode()){
-				areaHandler.setAccessibleAreas(list.getAreaList());
+			if(Settings.debugEnabled()){
+				AreaHandler.setAccessibleAreas(ObjectList.getAreaList());
 			}
 		}
 		
-		commandHandler.setPlayer(player);
-		commandHandler.setWindow(window);
-
-		commandHandler.setWaitEnabled(gameStart.getWaitEnabled());
-		commandHandler.setSoundEnabled(gameStart.getSoundEnabled());
-		commandHandler.setDebugMode(gameStart.getDebugMode());
-		
-		commandHandler.setAreaHandler(areaHandler);
-		
-		if(!gameStart.getDebugMode()){
-			text.printText("Saving...");
+		if(!Settings.debugEnabled()){
+			Text.printLine("Saving...");
 			save.setTutorialComplete(tutorialComplete);
 			
 			if(save.newSaveCreated()){
-				save.save(save.getSaveLoaded(), save.getSaveName(), areaHandler.getArea(), areaHandler.getAccessibleAreas(), player);
+				save.save(save.getSaveLoaded(), save.getSaveName(), AreaHandler.getArea(), AreaHandler.getAccessibleAreas());
 			}
 			else{
-				save.save(save.getSaveLoaded(), save.getSaveName(save.getSaveLoaded()), areaHandler.getArea(), areaHandler.getAccessibleAreas(), player);
+				save.save(save.getSaveLoaded(), save.getSaveName(save.getSaveLoaded()), AreaHandler.getArea(), AreaHandler.getAccessibleAreas());
 			}
 			
-			text.printText("Game saved.");
+			Text.printLine("Game saved.");
 		}
 		
 		if(save.newSaveCreated()){
-			text.addLine();
-			text.printText("-TIP-: Use the \"help\" command. You will learn useful information from it.", new Color(0, 128, 0));
-			text.addLine();
-			text.printTextAddLine(new String[] {"Welcome to Forestry Town!", "You are now free to input commands!", "Type 'help' for details.", "You can also use 'back' or 'b' to exit menus."});
+			Text.addLine();
+			Text.printLine("-TIP-: Use the \"help\" command. You will learn useful information from it.", new Color(0, 128, 0));
+			Text.addLine();
+			Text.printLineExtra(new String[] {"Welcome to Forestry Town!", "You are now free to input commands!", "Type 'help' for details.", "You can also use 'back' or 'b' to exit menus."});
 		}
 		else{
-			text.printTextAddLine("You are currently in ");
-			text.print(areaHandler.getArea().getName(), areaHandler.getArea().getColor());
-			text.print(".");
+			Text.printLineExtra("You are currently in ");
+			Text.print(AreaHandler.getArea().getName(), AreaHandler.getArea().getColor());
+			Text.print(".");
 		}
 		
 		while(true){
@@ -105,73 +84,65 @@ public class GameHandler{
 	
 	public void update(){
 		
-		player = commandHandler.getPlayer();
-		
-		areaHandler = commandHandler.getAreaHandler();
 		prevUpdateTicks = updateTicks;
 		gameTicks++;
-		
-		player.updateStats();
 		
 		if(commandHandler.incrementUpdateTick()){
 			updateTicks++;
 		}
 		
 		if(updateTicks > prevUpdateTicks){
-			player.updateStats();
 			commandHandler.updateRestCounter();
 			encounter(commandHandler.getRandomizeEncounter());
 		}
 		
-		if(gameTicks >= 5 && !tutorialComplete && !gameStart.getDebugMode()){
-			commandHandler.enemyEncounter(list.getEnemyList()[0]);
+		if(gameTicks >= 5 && !tutorialComplete && !Settings.debugEnabled()){
+			// Tutorial
+			
+			commandHandler.enemyEncounter(ObjectList.getEnemyList()[0]);
 			tutorialComplete = true;
 			
 			commandHandler.setTutorialComplete(tutorialComplete);
-			text.printTextAddLine(new String[]{"You have completed your first battle with an enemy! You can type 'i' then 'healer' to heal yourself.", "You can now access "});
-			text.print(list.getAreaList()[2].getName(), list.getAreaList()[2].getColor());
-			text.print("!");
+			Text.printLineExtra(new String[]{"You have completed your first battle with an enemy! You can type 'in healer' to heal yourself.", "You can now access "});
+			Text.print(ObjectList.getAreaList()[2].getName(), ObjectList.getAreaList()[2].getColor());
+			Text.print("!");
 			
-			areaHandler.addAccessibleArea(list.getAreaList()[2]);
-			commandHandler.setAreaHandler(areaHandler);
+			AreaHandler.addAccessibleArea(ObjectList.getAreaList()[2]);
 		}
 		
 		if(commandHandler.getLastEnemyKilled() != null){
-			if(commandHandler.getLastEnemyKilled().getEnemyName().equals(list.getEnemyList()[7].getEnemyName())){
-				text.printTextAddLine("You can now access ");
-				text.print(list.getAreaList()[3].getName(), list.getAreaList()[3].getColor());
-				text.print("!");
+			if(!AreaHandler.isAreaAccessible(ObjectList.getAreaList()[3]) && commandHandler.getLastEnemyKilled().getEnemyName().equals(ObjectList.getEnemyList()[7].getEnemyName())){
+				// Killed Goblin Leader, unlocks Spectral Forest
+				
+				Text.printLineExtra("You can now access ");
+				Text.print(ObjectList.getAreaList()[3].getName(), ObjectList.getAreaList()[3].getColor());
+				Text.print("!");
 	
-				areaHandler.addAccessibleArea(list.getAreaList()[3]);
-				commandHandler.setAreaHandler(areaHandler);
+				AreaHandler.addAccessibleArea(ObjectList.getAreaList()[3]);
 			}
-			else if(commandHandler.getLastEnemyKilled().getEnemyName().equals(list.getEnemyList()[20].getEnemyName())){
-				text.printTextAddLine("You can now access ");
-				text.print(list.getAreaList()[5].getName(), list.getAreaList()[5].getColor());
-				text.print(", ");
-				text.print(list.getAreaList()[6].getName(), list.getAreaList()[6].getColor());
-				text.print(", and ");
-				text.print(list.getAreaList()[7].getName(), list.getAreaList()[7].getColor());
-				text.print("!");
+			else if(!AreaHandler.isAreaAccessible(ObjectList.getAreaList()[5]) && commandHandler.getLastEnemyKilled().getEnemyName().equals(ObjectList.getEnemyList()[20].getEnemyName())){
+				// Killed Ghost King, unlocks Vibrancy Town, Diamond River, and Bluesteel Mineshaft
+				
+				Text.printLineExtra("You can now access ");
+				Text.print(ObjectList.getAreaList()[5].getName(), ObjectList.getAreaList()[5].getColor());
+				Text.print(", ");
+				Text.print(ObjectList.getAreaList()[6].getName(), ObjectList.getAreaList()[6].getColor());
+				Text.print(", and ");
+				Text.print(ObjectList.getAreaList()[7].getName(), ObjectList.getAreaList()[7].getColor());
+				Text.print("!");
 
-				areaHandler.addAccessibleArea(list.getAreaList()[5]);
-				areaHandler.addAccessibleArea(list.getAreaList()[6]);
-				areaHandler.addAccessibleArea(list.getAreaList()[7]);
-				commandHandler.setAreaHandler(areaHandler);
+				AreaHandler.addAccessibleArea(ObjectList.getAreaList()[5]);
+				AreaHandler.addAccessibleArea(ObjectList.getAreaList()[6]);
+				AreaHandler.addAccessibleArea(ObjectList.getAreaList()[7]);
 			}
 		}
-		
-		
-		commandHandler.setPlayer(player);
-		
-		commandHandler.setAreaHandler(areaHandler);
 	}
 	
 	public void encounter(boolean randomEncounter){
-		Enemy[] enemies = areaHandler.getArea().getEncounters();
+		Enemy[] enemies = AreaHandler.getArea().getEncounters();
 		Enemy enemy = null;
 		
-		if(!commandHandler.getRandomizeEncounter() || (random.nextInt(99) + 1 <= areaHandler.getArea().getEncounterChance() && commandHandler.getRandomizeEncounter())){
+		if(!commandHandler.getRandomizeEncounter() || (RandomGen.randomChance(AreaHandler.getArea().getEncounterChance()) && commandHandler.getRandomizeEncounter())){
 			if(enemies.length > 0){
 				
 				boolean[] isEnemySelected = new boolean[enemies.length];

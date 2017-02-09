@@ -1,5 +1,5 @@
 # Dragon-Scrolls
-Text-Based RPG
+Text-Based RPG (unfinished)
 
 Use any recent Java version (7 or above)
 Run the jar file for the game
